@@ -1,0 +1,18 @@
+{
+	"installermod.title": "Сервер предлагает установить файлы",
+	"installermod.warning": "Моды — это исполняемый код. Соглашайтесь, только если доверяете этому серверу.",
+	"installermod.summary": "Файлов: %s, всего %s",
+	"installermod.category.mod": "мод",
+	"installermod.category.resourcepack": "ресурспак",
+	"installermod.category.shaderpack": "шейдер",
+	"installermod.update": "обновление",
+	"installermod.more": "…и ещё %s",
+	"installermod.accept": "Скачать и установить",
+	"installermod.decline": "Отказаться",
+	"installermod.cancel": "Отменить",
+	"installermod.close": "Закрыть",
+	"installermod.downloading": "Загрузка: %s (%s из %s)",
+	"installermod.done": "Установлено файлов: %s из %s",
+	"installermod.restart": "Моды установлены. Перезапустите игру и подключитесь снова.",
+	"installermod.cancelled": "Загрузка отменена."
+}

@@ -1,0 +1,20 @@
+{
+	"schemaVersion": 1,
+	"id": "installermod",
+	"version": "${version}",
+	"name": "InstallerMod",
+	"description": "Хост отправляет клиентам свои моды, ресурспаки и шейдеры (с подтверждением игрока).",
+	"authors": ["bogdan"],
+	"license": "MIT",
+	"environment": "*",
+	"entrypoints": {
+		"main": ["com.installermod.InstallerMod"],
+		"client": ["com.installermod.client.InstallerModClient"]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.2",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}
