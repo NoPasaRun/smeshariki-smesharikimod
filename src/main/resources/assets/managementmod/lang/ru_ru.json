@@ -1,0 +1,20 @@
+{
+  "managementmod.title": "Сервер предлагает установить файлы",
+  "managementmod.warning": "Моды — это исполняемый код. Соглашайтесь, только если доверяете этому серверу.",
+  "managementmod.summary": "Файлов: %s, всего %s",
+  "managementmod.category.mod": "мод",
+  "managementmod.category.resourcepack": "ресурспак",
+  "managementmod.category.shaderpack": "шейдер",
+  "managementmod.update": "обновление",
+  "managementmod.more": "…и ещё %s",
+  "managementmod.accept": "Скачать и установить",
+  "managementmod.decline": "Отказаться",
+  "managementmod.cancel": "Отменить",
+  "managementmod.close": "Закрыть",
+  "managementmod.downloading": "Загрузка: %s (%s из %s)",
+  "managementmod.done": "Установлено файлов: %s из %s",
+  "managementmod.restart": "Моды установлены. Перезапустите игру и подключитесь снова.",
+  "managementmod.cancelled": "Загрузка отменена.",
+  "key.category.managementmod.main": "Управление",
+  "key.managementmod.versions": "Версии мира"
+}

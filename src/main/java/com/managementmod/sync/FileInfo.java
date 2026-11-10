@@ -1,4 +1,4 @@
-package com.installermod.sync;
+package com.managementmod.sync;
 
 import java.io.IOException;
 import java.io.InputStream;

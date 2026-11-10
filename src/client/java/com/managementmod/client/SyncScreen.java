@@ -1,4 +1,4 @@
-package com.installermod.client;
+package com.managementmod.client;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -22,7 +22,7 @@ public class SyncScreen extends Screen {
 	private SyncSession.State shown;
 
 	public SyncScreen(SyncSession session, Screen previous) {
-		super(Component.translatable("installermod.title"));
+		super(Component.translatable("managementmod.title"));
 		this.session = session;
 		this.previous = previous;
 	}
@@ -34,14 +34,14 @@ public class SyncScreen extends Screen {
 		int y = height - 28;
 		switch (shown) {
 			case OFFER -> {
-				addRenderableWidget(Button.builder(Component.translatable("installermod.accept"), b -> session.start())
+				addRenderableWidget(Button.builder(Component.translatable("managementmod.accept"), b -> session.start())
 					.bounds(cx - 155, y, 150, 20).build());
-				addRenderableWidget(Button.builder(Component.translatable("installermod.decline"), b -> onClose())
+				addRenderableWidget(Button.builder(Component.translatable("managementmod.decline"), b -> onClose())
 					.bounds(cx + 5, y, 150, 20).build());
 			}
-			case DOWNLOADING -> addRenderableWidget(Button.builder(Component.translatable("installermod.cancel"),
+			case DOWNLOADING -> addRenderableWidget(Button.builder(Component.translatable("managementmod.cancel"),
 				b -> session.cancel()).bounds(cx - 75, y, 150, 20).build());
-			case DONE -> addRenderableWidget(Button.builder(Component.translatable("installermod.close"),
+			case DONE -> addRenderableWidget(Button.builder(Component.translatable("managementmod.close"),
 				b -> onClose()).bounds(cx - 75, y, 150, 20).build());
 		}
 	}
@@ -88,8 +88,8 @@ public class SyncScreen extends Screen {
 	}
 
 	private void renderOffer(GuiGraphicsExtractor g) {
-		int y = wrapped(g, Component.translatable("installermod.warning"), 28, YELLOW) + 2;
-		g.centeredText(font, Component.translatable("installermod.summary",
+		int y = wrapped(g, Component.translatable("managementmod.warning"), 28, YELLOW) + 2;
+		g.centeredText(font, Component.translatable("managementmod.summary",
 			session.items().size(), formatSize(session.totalBytes())), width / 2, y, GRAY);
 		y += font.lineHeight + 8;
 
@@ -101,19 +101,19 @@ public class SyncScreen extends Screen {
 			SyncSession.Item item = items.get(i);
 			String line = "[" + Component.translatable(item.entry().category().translationKey).getString() + "] "
 				+ item.entry().name() + " — " + formatSize(item.entry().size())
-				+ (item.isUpdate() ? " (" + Component.translatable("installermod.update").getString() + ")" : "");
+				+ (item.isUpdate() ? " (" + Component.translatable("managementmod.update").getString() + ")" : "");
 			g.text(font, line, x, y, WHITE);
 			y += font.lineHeight + 2;
 		}
 		if (shownCount < items.size()) {
-			g.text(font, Component.translatable("installermod.more", items.size() - shownCount), x, y, GRAY);
+			g.text(font, Component.translatable("managementmod.more", items.size() - shownCount), x, y, GRAY);
 		}
 	}
 
 	private void renderProgress(GuiGraphicsExtractor g) {
 		int cx = width / 2;
 		int cy = height / 2;
-		g.centeredText(font, Component.translatable("installermod.downloading",
+		g.centeredText(font, Component.translatable("managementmod.downloading",
 			session.currentName(), session.currentNumber(), session.items().size()), cx, cy - 20, WHITE);
 		int barLeft = cx - 150;
 		int barRight = cx + 150;
@@ -128,14 +128,14 @@ public class SyncScreen extends Screen {
 	private void renderResult(GuiGraphicsExtractor g) {
 		int y = 40;
 		if (session.cancelled()) {
-			g.centeredText(font, Component.translatable("installermod.cancelled"), width / 2, y, YELLOW);
+			g.centeredText(font, Component.translatable("managementmod.cancelled"), width / 2, y, YELLOW);
 			y += font.lineHeight + 4;
 		}
-		g.centeredText(font, Component.translatable("installermod.done", session.installed(), session.items().size()),
+		g.centeredText(font, Component.translatable("managementmod.done", session.installed(), session.items().size()),
 			width / 2, y, WHITE);
 		y += font.lineHeight + 6;
 		if (session.modsInstalled()) {
-			y = wrapped(g, Component.translatable("installermod.restart"), y, YELLOW) + 4;
+			y = wrapped(g, Component.translatable("managementmod.restart"), y, YELLOW) + 4;
 		}
 		int maxLines = Math.max(1, (height - 40 - y) / (font.lineHeight + 2));
 		List<String> errors = session.errors();

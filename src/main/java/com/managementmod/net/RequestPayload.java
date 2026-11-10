@@ -1,4 +1,4 @@
-package com.installermod.net;
+package com.managementmod.net;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -7,7 +7,7 @@ import net.minecraft.resources.Identifier;
 
 /** Клиент → сервер: «пришли кусок файла №index начиная со смещения offset». */
 public record RequestPayload(int index, long offset) implements CustomPacketPayload {
-	public static final Type<RequestPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath("installermod", "request"));
+	public static final Type<RequestPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath("managementmod", "request"));
 	public static final StreamCodec<FriendlyByteBuf, RequestPayload> CODEC =
 		CustomPacketPayload.codec(RequestPayload::write, RequestPayload::new);
 

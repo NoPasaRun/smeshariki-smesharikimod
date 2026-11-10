@@ -1,9 +1,9 @@
-package com.installermod.sync;
+package com.managementmod.sync;
 
-import com.installermod.net.ChunkPayload;
-import com.installermod.net.DonePayload;
-import com.installermod.net.ManifestPayload;
-import com.installermod.net.RequestPayload;
+import com.managementmod.net.ChunkPayload;
+import com.managementmod.net.DonePayload;
+import com.managementmod.net.ManifestPayload;
+import com.managementmod.net.RequestPayload;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.event.Event;
@@ -43,9 +43,9 @@ import java.util.stream.Stream;
  * произвольные пути от клиента не принимаются.
  */
 public final class ServerSync {
-	private static final Logger LOGGER = LoggerFactory.getLogger("InstallerMod");
+	private static final Logger LOGGER = LoggerFactory.getLogger("ManagementMod");
 	private static final ExecutorService IO = Executors.newSingleThreadExecutor(r -> {
-		Thread thread = new Thread(r, "InstallerMod-IO");
+		Thread thread = new Thread(r, "ManagementMod-IO");
 		thread.setDaemon(true);
 		return thread;
 	});
@@ -53,7 +53,7 @@ public final class ServerSync {
 	private record Served(FileEntry entry, Path path, long mtime) {}
 
 	private static final long TIMEOUT_NANOS = 15L * 60 * 1_000_000_000L;
-	private static final ConfigurationTask.Type TASK_TYPE = new ConfigurationTask.Type("installermod:sync");
+	private static final ConfigurationTask.Type TASK_TYPE = new ConfigurationTask.Type("managementmod:sync");
 
 	/** Состояние одного подключающегося клиента: манифест, выданный именно ему, и признак завершения. */
 	private static final class Session {
@@ -73,7 +73,7 @@ public final class ServerSync {
 		@Override
 		public void start(Consumer<net.minecraft.network.protocol.Packet<?>> send) {
 			if (!ServerConfigurationNetworking.canSend(handler, ManifestPayload.TYPE)) {
-				finish(server, handler, session); // у клиента нет InstallerMod
+				finish(server, handler, session); // у клиента нет ManagementMod
 				return;
 			}
 			IO.execute(() -> {
@@ -167,7 +167,7 @@ public final class ServerSync {
 
 		// Fabric добавляет задачу сверки реестров в BEFORE_CONFIGURE (фаза по умолчанию),
 		// поэтому наша задача регистрируется в более ранней фазе и выполняется раньше неё.
-		Identifier early = Identifier.fromNamespaceAndPath("installermod", "early");
+		Identifier early = Identifier.fromNamespaceAndPath("managementmod", "early");
 		ServerConfigurationConnectionEvents.BEFORE_CONFIGURE.addPhaseOrdering(early, Event.DEFAULT_PHASE);
 		ServerConfigurationConnectionEvents.BEFORE_CONFIGURE.register(early, (handler, server) -> {
 			Session session = new Session();
@@ -252,7 +252,7 @@ public final class ServerSync {
 					}
 					ModMeta meta = info.meta() == null ? ModMeta.NONE : info.meta();
 					if (category == SyncCategory.MOD
-						&& (meta.id().equals("installermod") || meta.environment().equals("server"))) {
+						&& (meta.id().equals("managementmod") || meta.environment().equals("server"))) {
 						continue; // серверные моды клиенту не нужны
 					}
 					if (category == SyncCategory.MOD && config.onlyServeLoadedMods && !isLoadedAsIs(name, info)) {

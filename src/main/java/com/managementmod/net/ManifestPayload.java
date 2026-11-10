@@ -1,6 +1,6 @@
-package com.installermod.net;
+package com.managementmod.net;
 
-import com.installermod.sync.FileEntry;
+import com.managementmod.sync.FileEntry;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -13,7 +13,7 @@ import java.util.List;
 public record ManifestPayload(int protocol, List<FileEntry> files) implements CustomPacketPayload {
 	public static final int PROTOCOL = 1;
 	public static final int MAX_FILES = 4096;
-	public static final Type<ManifestPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath("installermod", "manifest"));
+	public static final Type<ManifestPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath("managementmod", "manifest"));
 	public static final StreamCodec<FriendlyByteBuf, ManifestPayload> CODEC =
 		CustomPacketPayload.codec(ManifestPayload::write, ManifestPayload::new);
 

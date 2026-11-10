@@ -1,4 +1,4 @@
-package com.installermod.sync;
+package com.managementmod.sync;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;

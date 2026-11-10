@@ -1,10 +1,10 @@
-package com.installermod.sync;
+package com.managementmod.sync;
 
 /** Что именно синхронизируется: папка внутри игровой директории и допустимое расширение файла. */
 public enum SyncCategory {
-	MOD("mods", ".jar", "installermod.category.mod"),
-	RESOURCE_PACK("resourcepacks", ".zip", "installermod.category.resourcepack"),
-	SHADER_PACK("shaderpacks", ".zip", "installermod.category.shaderpack");
+	MOD("mods", ".jar", "managementmod.category.mod"),
+	RESOURCE_PACK("resourcepacks", ".zip", "managementmod.category.resourcepack"),
+	SHADER_PACK("shaderpacks", ".zip", "managementmod.category.shaderpack");
 
 	public final String dir;
 	public final String extension;

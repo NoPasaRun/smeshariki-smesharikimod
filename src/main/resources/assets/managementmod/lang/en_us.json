@@ -1,0 +1,20 @@
+{
+  "managementmod.title": "The server offers files to install",
+  "managementmod.warning": "Mods are executable code. Accept only if you trust this server.",
+  "managementmod.summary": "Files: %s, total %s",
+  "managementmod.category.mod": "mod",
+  "managementmod.category.resourcepack": "resource pack",
+  "managementmod.category.shaderpack": "shader pack",
+  "managementmod.update": "update",
+  "managementmod.more": "…and %s more",
+  "managementmod.accept": "Download and install",
+  "managementmod.decline": "Decline",
+  "managementmod.cancel": "Cancel",
+  "managementmod.close": "Close",
+  "managementmod.downloading": "Downloading: %s (%s of %s)",
+  "managementmod.done": "Files installed: %s of %s",
+  "managementmod.restart": "Mods installed. Restart the game and connect again.",
+  "managementmod.cancelled": "Download cancelled.",
+  "key.category.managementmod.main": "Management",
+  "key.managementmod.versions": "World versions"
+}

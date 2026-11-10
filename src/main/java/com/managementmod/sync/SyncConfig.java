@@ -1,4 +1,4 @@
-package com.installermod.sync;
+package com.managementmod.sync;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -15,9 +15,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Серверная конфигурация: config/installermod.json. */
+/** Серверная конфигурация: config/managementmod.json. */
 public class SyncConfig {
-	private static final Logger LOGGER = LoggerFactory.getLogger("InstallerMod");
+	private static final Logger LOGGER = LoggerFactory.getLogger("ManagementMod");
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
 	public boolean syncMods = true;
@@ -46,7 +46,14 @@ public class SyncConfig {
 	}
 
 	public static SyncConfig load() {
-		Path file = FabricLoader.getInstance().getConfigDir().resolve("installermod.json");
+		Path file = FabricLoader.getInstance().getConfigDir().resolve("managementmod.json");
+		// мод назывался InstallerMod: прежний файл настроек переезжает в новый
+		Path old = FabricLoader.getInstance().getConfigDir().resolve("installermod.json");
+		try {
+			if (Files.isRegularFile(old) && !Files.exists(file)) Files.move(old, file);
+		} catch (IOException e) {
+			LOGGER.warn("Не удалось перенести {} в {}", old, file, e);
+		}
 		SyncConfig config = new SyncConfig();
 		if (Files.isRegularFile(file)) {
 			try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {

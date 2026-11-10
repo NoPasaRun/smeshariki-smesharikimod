@@ -1,15 +1,15 @@
 {
 	"schemaVersion": 1,
-	"id": "installermod",
+	"id": "managementmod",
 	"version": "${version}",
-	"name": "InstallerMod",
-	"description": "Хост отправляет клиентам свои моды, ресурспаки и шейдеры (с подтверждением игрока).",
+	"name": "ManagementMod",
+	"description": "Управление игрой и миром: раздача модов, ресурспаков и шейдеров клиентам (с подтверждением), версии мира с откатом, проверка аккаунтов в сети.",
 	"authors": ["bogdan"],
 	"license": "MIT",
 	"environment": "*",
 	"entrypoints": {
-		"main": ["com.installermod.InstallerMod"],
-		"client": ["com.installermod.client.InstallerModClient"]
+		"main": ["com.managementmod.ManagementMod"],
+		"client": ["com.managementmod.client.ManagementModClient"]
 	},
 	"depends": {
 		"fabricloader": ">=0.19.5",

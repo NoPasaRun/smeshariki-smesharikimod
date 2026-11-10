@@ -1,11 +1,11 @@
-package com.installermod.client;
+package com.managementmod.client;
 
-import com.installermod.net.ChunkPayload;
-import com.installermod.net.DonePayload;
-import com.installermod.net.ManifestPayload;
-import com.installermod.sync.FileEntry;
-import com.installermod.sync.FileInfo;
-import com.installermod.sync.SyncCategory;
+import com.managementmod.net.ChunkPayload;
+import com.managementmod.net.DonePayload;
+import com.managementmod.net.ManifestPayload;
+import com.managementmod.sync.FileEntry;
+import com.managementmod.sync.FileInfo;
+import com.managementmod.sync.SyncCategory;
 import net.fabricmc.fabric.api.client.networking.v1.ClientConfigurationConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientConfigurationNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
@@ -33,11 +33,11 @@ import java.util.stream.Stream;
 
 /** Клиентская часть: получает манифест, находит недостающие файлы и предлагает их установить. */
 public final class SyncClient {
-	private static final Logger LOGGER = LoggerFactory.getLogger("InstallerMod");
+	private static final Logger LOGGER = LoggerFactory.getLogger("ManagementMod");
 	/** Больше этого за одну сессию клиент не согласится принимать, что бы ни заявил сервер. */
 	private static final long MAX_TOTAL_BYTES = 4L << 30;
 	private static final ExecutorService ANALYZE = Executors.newSingleThreadExecutor(r -> {
-		Thread thread = new Thread(r, "InstallerMod-Analyze");
+		Thread thread = new Thread(r, "ManagementMod-Analyze");
 		thread.setDaemon(true);
 		return thread;
 	});
@@ -92,7 +92,7 @@ public final class SyncClient {
 		}
 		client.gui.setScreen(back); // экран подключения продолжает обрабатывать соединение
 		if (finished.modsInstalled() && connection != null) {
-			connection.disconnect(Component.translatable("installermod.restart"));
+			connection.disconnect(Component.translatable("managementmod.restart"));
 		} else {
 			sendDone();
 		}

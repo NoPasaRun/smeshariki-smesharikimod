@@ -1,4 +1,4 @@
-package com.installermod.net;
+package com.managementmod.net;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -9,7 +9,7 @@ import net.minecraft.resources.Identifier;
 public record ChunkPayload(int index, long offset, byte[] data) implements CustomPacketPayload {
 	/** Размер куска. Лимит пакета сервер→клиент в Minecraft — 1 МиБ, берём с запасом. */
 	public static final int CHUNK_SIZE = 256 * 1024;
-	public static final Type<ChunkPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath("installermod", "chunk"));
+	public static final Type<ChunkPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath("managementmod", "chunk"));
 	public static final StreamCodec<FriendlyByteBuf, ChunkPayload> CODEC =
 		CustomPacketPayload.codec(ChunkPayload::write, ChunkPayload::new);
 

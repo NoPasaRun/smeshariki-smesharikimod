@@ -6,7 +6,7 @@ loom {
 	splitEnvironmentSourceSets()
 
 	mods {
-		"installermod" {
+		"managementmod" {
 			sourceSet sourceSets.main
 			sourceSet sourceSets.client
 		}

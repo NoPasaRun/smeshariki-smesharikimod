@@ -1,10 +1,10 @@
-package com.installermod.client;
+package com.managementmod.client;
 
-import com.installermod.net.ChunkPayload;
-import com.installermod.net.RequestPayload;
-import com.installermod.sync.FileEntry;
-import com.installermod.sync.FileInfo;
-import com.installermod.sync.SyncCategory;
+import com.managementmod.net.ChunkPayload;
+import com.managementmod.net.RequestPayload;
+import com.managementmod.sync.FileEntry;
+import com.managementmod.sync.FileInfo;
+import com.managementmod.sync.SyncCategory;
 import net.fabricmc.fabric.api.client.networking.v1.ClientConfigurationNetworking;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
@@ -25,8 +25,8 @@ import java.util.concurrent.Executors;
  * Одна сессия «предложение → согласие → загрузка». Все поля меняются только в клиентском потоке;
  * запись на диск выполняется в отдельном потоке, результат возвращается через {@code Minecraft.execute}.
  *
- * <p>Каждый файл качается во временный {@code *.installermod-part}, проверяется по SHA-256 из манифеста
- * и только потом переименовывается. Заменяемые файлы не удаляются, а переименовываются в {@code *.installermod-old}.
+ * <p>Каждый файл качается во временный {@code *.managementmod-part}, проверяется по SHA-256 из манифеста
+ * и только потом переименовывается. Заменяемые файлы не удаляются, а переименовываются в {@code *.managementmod-old}.
  */
 public final class SyncSession {
 	public enum State { OFFER, DOWNLOADING, DONE }
@@ -40,7 +40,7 @@ public final class SyncSession {
 
 	private static final long TIMEOUT_NANOS = 30_000_000_000L;
 	private static final ExecutorService IO = Executors.newSingleThreadExecutor(r -> {
-		Thread thread = new Thread(r, "InstallerMod-Client-IO");
+		Thread thread = new Thread(r, "ManagementMod-Client-IO");
 		thread.setDaemon(true);
 		return thread;
 	});
@@ -132,7 +132,7 @@ public final class SyncSession {
 				if (!dir.equals(target.getParent())) {
 					throw new IOException("недопустимое имя файла");
 				}
-				Path part = dir.resolve(item.entry().name() + ".installermod-part");
+				Path part = dir.resolve(item.entry().name() + ".managementmod-part");
 				OutputStream out = Files.newOutputStream(part, StandardOpenOption.CREATE,
 					StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
 				active = new Download(item, target, part, out);
@@ -203,7 +203,7 @@ public final class SyncSession {
 				}
 				for (Path old : d.item.replaces()) {
 					if (Files.exists(old)) {
-						Files.move(old, old.resolveSibling(old.getFileName() + ".installermod-old"),
+						Files.move(old, old.resolveSibling(old.getFileName() + ".managementmod-old"),
 							StandardCopyOption.REPLACE_EXISTING);
 					}
 				}
