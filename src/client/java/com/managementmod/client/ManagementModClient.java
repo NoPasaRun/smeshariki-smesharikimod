@@ -26,6 +26,8 @@ public class ManagementModClient implements ClientModInitializer {
 		ClientTickEvents.END_CLIENT_TICK.register(LanSettings::tick);
 		ClientPlayNetworking.registerGlobalReceiver(VersionsPayloads.Versions.TYPE, (payload, ctx) -> {
 			VersionsClient.INSTANCE.head = payload.head();
+			VersionsClient.INSTANCE.live = payload.live();
+			VersionsClient.INSTANCE.busy = payload.busy();
 			VersionsClient.INSTANCE.versions = payload.list();
 		});
 		ClientTickEvents.END_CLIENT_TICK.register(ManagementModClient::keys);

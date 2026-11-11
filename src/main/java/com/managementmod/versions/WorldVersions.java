@@ -29,6 +29,41 @@ public final class WorldVersions {
 	}
 
 	/**
+	 * Добавить в версии путь (шаблон от корня мира через {@code /}, {@code *} — любое имя сегмента; входит и сам путь, и всё внутри). Версии хранят <b>только</b> состояние мира:
+	 * блоки и сущности входят всегда, остальное — только объявленное так. Моды объявляют свои файлы, привязанные к блокам и сущностям (платформы, стены), а настройки,
+	 * данные игроков и уровней не объявляют: те сохраняются постоянно и откатом не трогаются. Звать при загрузке мода.
+	 */
+	public static void keep(String pattern) {
+		VcsServer.KEEP.add(pattern.split("/"));
+	}
+
+	/**
+	 * Живой откат: возврат мира к текущей версии без остановки сервера (блоки и сущности по одному чанку за тик). Движок есть у LevelMod (он же откатывает мир после
+	 * уровней); без него откат версии из окна V останавливает мир и заменяет файлы.
+	 */
+	public interface LiveRollback {
+		/**
+		 * Начать возврат мира к текущей версии (указатель уже передвинут на нужную). Идёт на потоке сервера понемногу каждый тик.
+		 *
+		 * @param progress звать при смене процента, 0…99
+		 * @param finished звать один раз в конце: {@code null} — мир возвращён, иначе причина сбоя
+		 * @return причина, по которой начать нельзя (тогда ничего не запущено и {@code finished} не будет вызван), или {@code null}
+		 */
+		@Nullable String begin(net.minecraft.server.MinecraftServer server, java.util.function.IntConsumer progress, java.util.function.Consumer<@Nullable String> finished);
+	}
+
+	private static volatile LiveRollback liveRollback;
+
+	/** Подключить движок живого отката. Звать при загрузке мода. */
+	public static void liveRollback(LiveRollback handler) {
+		liveRollback = handler;
+	}
+
+	static @Nullable LiveRollback liveRollback() {
+		return liveRollback;
+	}
+
+	/**
 	 * Файлы текущей версии мира: путь от корня мира (через {@code /}) → хеш содержимого; {@code null} — версий ещё нет. Читает с диска, сервер для этого
 	 * не нужен; чтение вызывать не на потоке игры, если версия большая.
 	 */

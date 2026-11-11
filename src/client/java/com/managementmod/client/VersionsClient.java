@@ -10,6 +10,8 @@ final class VersionsClient {
 	static final VersionsClient INSTANCE = new VersionsClient();
 
 	int head;
+	/** Откат идёт без остановки мира; откат сейчас идёт. */
+	boolean live, busy;
 	List<VersionsPayloads.Versions.Info> versions = new ArrayList<>();
 
 	private VersionsClient() {

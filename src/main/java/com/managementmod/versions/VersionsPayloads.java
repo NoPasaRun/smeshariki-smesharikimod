@@ -32,14 +32,16 @@ public final class VersionsPayloads {
 		}
 	}
 
-	/** Список версий мира (сервер → клиент). */
-	public record Versions(int head, java.util.List<Info> list) implements CustomPacketPayload {
+	/** Список версий мира (сервер → клиент): {@code live} — откат идёт без остановки мира, {@code busy} — откат сейчас идёт. */
+	public record Versions(int head, boolean live, boolean busy, java.util.List<Info> list) implements CustomPacketPayload {
 		public record Info(int id, String name, long time, String author, int changed, int files, long bytes) {
 		}
 
 		public static final Type<Versions> TYPE = VersionsPayloads.typeOf("versions");
 		public static final StreamCodec<RegistryFriendlyByteBuf, Versions> CODEC = StreamCodec.ofMember((Versions m, RegistryFriendlyByteBuf buf) -> {
 			buf.writeVarInt(m.head);
+			buf.writeBoolean(m.live);
+			buf.writeBoolean(m.busy);
 			buf.writeVarInt(m.list.size());
 			for (Info i : m.list) {
 				buf.writeVarInt(i.id);
@@ -52,10 +54,11 @@ public final class VersionsPayloads {
 			}
 		}, buf -> {
 			int head = buf.readVarInt();
+			boolean live = buf.readBoolean(), busy = buf.readBoolean();
 			int n = Math.min(buf.readVarInt(), 4096);
 			java.util.List<Info> list = new java.util.ArrayList<>();
 			for (int k = 0; k < n; k++) list.add(new Info(buf.readVarInt(), buf.readUtf(64), buf.readLong(), buf.readUtf(64), buf.readVarInt(), buf.readVarInt(), buf.readLong()));
-			return new Versions(head, list);
+			return new Versions(head, live, busy, list);
 		});
 
 		@Override

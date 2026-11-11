@@ -36,8 +36,9 @@ import net.minecraft.world.level.storage.LevelResource;
  * описание версии — {@code commits/<номер>.json} (название, время, список файлов с хешами). Хеши файлов, не менявшихся с прошлого раза
  * (размер и время изменения те же), берутся из {@code index.json}, а не считаются заново.
  * <p>
- * Откат на живом мире невозможен (файлы открыты), поэтому он откладывается: сервер записывает {@code pending.json}, перед этим делает
- * страховочную версию и останавливается; на {@code SERVER_STOPPED} файлы мира заменяются содержимым версии.
+ * Откат: если LevelMod подключил движок живого отката ({@link WorldVersions#liveRollback}), мир возвращается к версии на ходу, по одному чанку за тик
+ * (блоки и сущности). Иначе файлы открыты, и откат откладывается: сервер записывает {@code pending.json} и останавливается; на {@code SERVER_STOPPED}
+ * файлы мира заменяются содержимым версии.
  */
 public final class VcsServer {
 	/** Папка истории в корне мира; до переименования мода она называлась {@code buildmod_vcs} ({@link #migrateOldFolder}). */
@@ -48,6 +49,41 @@ public final class VcsServer {
 	 * (например, библиотека построек строителя). Мод версий не знает, чьи это файлы.
 	 */
 	static final Set<String> SKIP_TOP = java.util.concurrent.ConcurrentHashMap.newKeySet();
+	/**
+	 * Что входит в версии: только состояние мира (блоки, сущности, их данные), всё остальное (игроки, настройки мира, данные уровней, кат-сцены) в снимок не берётся и
+	 * при откате не трогается. Шаблоны путей от корня мира через {@code /}, сегмент {@code *} — любое имя; шаблон — и сам путь, и всё, что под ним.
+	 */
+	static final java.util.List<String[]> KEEP = new java.util.concurrent.CopyOnWriteArrayList<>();
+	static {
+		// блоки, биомы-метки и сущности всех измерений; сам `dimensions/*/*/data` (принудительные чанки и т. п.) не входит
+		for (String p : new String[] {"dimensions/*/*/region", "dimensions/*/*/entities", "dimensions/*/*/poi",
+				// состояние механик, привязанное к сущностям (вселённые смешарики, маршруты брёвен): откатывается вместе с ними
+				"data/gameplaymod"}) KEEP.add(p.split("/"));
+	}
+
+	/** Входит ли файл (путь от корня мира) в версии. */
+	static boolean kept(String rel) {
+		String[] parts = rel.split("/");
+		if (SKIP_TOP.contains(parts[0]) || rel.endsWith(".lock")) return false;
+		for (String[] pattern : KEEP) if (matches(pattern, parts, false)) return true;
+		return false;
+	}
+
+	/** Может ли в папке (путь от корня) лежать что-то из версий: папка совпадает с началом шаблона или лежит внутри него. */
+	static boolean mayHoldKept(String relDir) {
+		String[] parts = relDir.split("/");
+		if (SKIP_TOP.contains(parts[0])) return false;
+		for (String[] pattern : KEEP) if (matches(pattern, parts, true)) return true;
+		return false;
+	}
+
+	/** @param partial путь может быть короче шаблона (папка на пути к нужному) */
+	private static boolean matches(String[] pattern, String[] parts, boolean partial) {
+		int n = partial ? Math.min(pattern.length, parts.length) : pattern.length;
+		if (!partial && parts.length < pattern.length) return false;
+		for (int i = 0; i < n; i++) if (!pattern[i].equals("*") && !pattern[i].equals(parts[i])) return false;
+		return true;
+	}
 	static {
 		SKIP_TOP.add(DIR);
 		SKIP_TOP.add(OLD_DIR);
@@ -71,6 +107,8 @@ public final class VcsServer {
 	/** Указатель на текущую версию (как HEAD в git): последняя сохранённая или та, к которой откатились; 0 — версий нет. */
 	private static int head;
 	private static MinecraftServer server;
+	/** Идёт живой откат: пока он не кончился, версии не сохраняются, не откатываются и не удаляются (снимок вышел бы из полуоткатанного мира). Только в памяти. */
+	private static boolean rolling;
 
 	private VcsServer() {
 	}
@@ -78,6 +116,7 @@ public final class VcsServer {
 	public static void init() {
 		ServerLifecycleEvents.SERVER_STARTED.register(s -> {
 			server = s;
+			rolling = false;
 			migrateOldFolder(s.getWorldPath(LevelResource.ROOT));
 			try {
 				Files.deleteIfExists(dir().resolve("pending.json")); // откат не состоялся — не применяем его потом неожиданно
@@ -89,6 +128,7 @@ public final class VcsServer {
 			Path root = s.getWorldPath(LevelResource.ROOT);
 			COMMITS.clear();
 			server = null;
+			rolling = false;
 			applyPending(root);
 		});
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, s) -> send(handler.getPlayer()));
@@ -122,6 +162,10 @@ public final class VcsServer {
 		// в выживании мир не сохраняется и не откатывается вручную: изменения выживания и так возвращаются сами
 		if (!player.isCreative()) {
 			say(player, "Версии мира — только в творческом режиме");
+			return;
+		}
+		if (rolling && msg.kind() != VersionsPayloads.VcsAction.RENAME) {
+			say(player, "Идёт откат мира: дождитесь его конца");
 			return;
 		}
 		switch (msg.kind()) {
@@ -187,6 +231,11 @@ public final class VcsServer {
 			say(player, "Такой версии нет");
 			return;
 		}
+		WorldVersions.LiveRollback live = WorldVersions.liveRollback();
+		if (live != null) {
+			rollbackLive(player, live, target);
+			return;
+		}
 		try {
 			head = id; // новых версий откат не создаёт, только двигает указатель
 			writeHead();
@@ -198,6 +247,37 @@ public final class VcsServer {
 		sendAll();
 		server.getPlayerList().getPlayers().forEach(p -> say(p, "Откат к «" + target.name() + "»: мир закрывается, откройте его снова (несохранённые изменения пропадут)"));
 		server.halt(false);
+	}
+
+	/** Откат без остановки мира: движок читает текущую версию, поэтому указатель двигается первым и при отказе возвращается. */
+	private static void rollbackLive(ServerPlayer player, WorldVersions.LiveRollback live, Commit target) {
+		int before = head;
+		head = target.id();
+		writeHead();
+		String refusal;
+		try {
+			refusal = live.begin(server, percent -> announce("Откат к «" + target.name() + "»: " + percent + "%"), error -> {
+				rolling = false;
+				announce(error == null ? "Мир возвращён к версии «" + target.name() + "»" : "Откат к «" + target.name() + "» не закончен: " + error);
+				sendAll();
+			});
+		} catch (RuntimeException e) {
+			ManagementMod.LOGGER.error("Откат версии мира не начат", e);
+			refusal = e.toString();
+		}
+		if (refusal != null) {
+			head = before;
+			writeHead();
+			say(player, refusal);
+			return;
+		}
+		rolling = true;
+		announce("Откат к «" + target.name() + "»: 0%");
+		sendAll();
+	}
+
+	private static void announce(String text) {
+		if (server != null) server.getPlayerList().getPlayers().forEach(p -> say(p, text));
 	}
 
 	// ---------------------------------------------------------------- снимок
@@ -262,8 +342,7 @@ public final class VcsServer {
 	}
 
 	private static boolean skipped(Path root, Path file) {
-		Path rel = root.relativize(file);
-		return SKIP_TOP.contains(rel.getName(0).toString()) || file.getFileName().toString().endsWith(".lock");
+		return !kept(relative(root, file));
 	}
 
 	private static String relative(Path root, Path file) {
@@ -307,6 +386,8 @@ public final class VcsServer {
 			Files.deleteIfExists(pending);
 			JsonObject json = JsonParser.parseString(Files.readString(vcs.resolve("commits").resolve(id + ".json"), StandardCharsets.UTF_8)).getAsJsonObject();
 			Map<String, Entry> files = readFiles(json);
+			// старые версии хранили и то, что теперь в снимок не входит (игроки, настройки мира, данные уровней): оно остаётся как есть
+			files.keySet().removeIf(name -> !kept(name));
 			// сначала проверяем, что все объекты на месте — иначе не трогаем мир
 			for (Entry e : files.values())
 				if (!Files.exists(vcs.resolve("objects").resolve(e.hash()))) throw new IOException("не хватает данных версии " + e.hash());
@@ -329,7 +410,7 @@ public final class VcsServer {
 	private static void deleteEmptyDirs(Path root) throws IOException {
 		List<Path> dirs;
 		try (Stream<Path> walk = Files.walk(root)) {
-			dirs = walk.filter(Files::isDirectory).filter(p -> !p.equals(root) && !SKIP_TOP.contains(root.relativize(p).getName(0).toString())).sorted(java.util.Comparator.reverseOrder()).toList();
+			dirs = walk.filter(Files::isDirectory).filter(p -> !p.equals(root) && mayHoldKept(relative(root, p))).sorted(java.util.Comparator.reverseOrder()).toList();
 		}
 		for (Path d : dirs) {
 			try (Stream<Path> s = Files.list(d)) {
@@ -467,6 +548,6 @@ public final class VcsServer {
 		List<VersionsPayloads.Versions.Info> list = new ArrayList<>();
 		for (Commit c : COMMITS.values())
 			list.add(new VersionsPayloads.Versions.Info(c.id(), c.name(), c.time(), c.author(), c.changed(), c.files().size(), c.bytes()));
-		ServerPlayNetworking.send(player, new VersionsPayloads.Versions(head, list));
+		ServerPlayNetworking.send(player, new VersionsPayloads.Versions(head, WorldVersions.liveRollback() != null, rolling, list));
 	}
 }

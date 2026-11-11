@@ -15,7 +15,7 @@ import net.minecraft.network.chat.Component;
 
 /**
  * Версии мира («упрощённый git»): сохранить снимок мира под названием, откатиться к версии, переименовать, удалить.
- * Данные живут на сервере; откат закрывает мир (файлы заменяются после остановки сервера).
+ * Данные живут на сервере; откат идёт без остановки мира (если подключён движок LevelMod), иначе закрывает мир и заменяет файлы после остановки.
  */
 final class VersionsScreen extends net.minecraft.client.gui.screens.Screen {
 	private static final int ROW = 22, LIST_W = 320;
@@ -76,7 +76,7 @@ final class VersionsScreen extends net.minecraft.client.gui.screens.Screen {
 		}
 
 		int rowA = bottom - 26;
-		boolean has = cur != null && !renaming;
+		boolean has = cur != null && !renaming && !state.busy;
 		addButton(cx - 160, rowA, 100, confirmRollback ? "Точно откатить?" : "Откатить", has, () -> {
 			if (!confirmRollback) {
 				confirmRollback = true;
@@ -189,7 +189,8 @@ final class VersionsScreen extends net.minecraft.client.gui.screens.Screen {
 					+ (v.author().isEmpty() ? "" : " · " + v.author());
 			g.centeredText(font, info + (v.id() == state.head ? " · текущая ●" : ""), width / 2, height - 78, 0xFFC0C0C0);
 			if (confirmRollback)
-				g.centeredText(font, "Мир закроется, несохранённые изменения пропадут. Откройте мир снова.", width / 2, height - 90, 0xFFFFC040);
+				g.centeredText(font, state.live ? "Мир вернётся к версии без перезапуска, всё сделанное после неё пропадёт." : "Мир закроется, несохранённые изменения пропадут. Откройте мир снова.", width / 2, height - 90, 0xFFFFC040);
+			if (state.busy) g.centeredText(font, "Идёт откат мира…", width / 2, height - 102, 0xFFFFC040);
 		}
 	}
 }
