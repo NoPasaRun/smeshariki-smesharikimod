@@ -89,23 +89,50 @@ def main():
     if input().strip().lower() != "y":
         sys.exit("отменено")
 
-    def api(url, data=None, ctype="application/json"):
-        req = urllib.request.Request(url, data=data, method="POST" if data is not None else "GET")
+    def api(url, data=None, ctype="application/json", method=None):
+        req = urllib.request.Request(url, data=data, method=method or ("POST" if data is not None else "GET"))
         req.add_header("Authorization", "Bearer " + token)
         req.add_header("Accept", "application/vnd.github+json")
         req.add_header("User-Agent", "smeshariki-release")
         if data is not None:
             req.add_header("Content-Type", ctype)
         with urllib.request.urlopen(req, timeout=1800) as r:
-            return json.load(r)
+            return json.load(r) if r.status != 204 else {}
 
-    release = api("https://api.github.com/repos/%s/releases" % args.repo, json.dumps({"tag_name": args.tag, "name": args.tag, "body": args.notes, "draft": False, "prerelease": False}).encode())
+    base = "https://api.github.com/repos/%s" % args.repo
+    try:
+        release = api("%s/releases/tags/%s" % (base, args.tag))
+        print("релиз %s уже есть: докачиваю недостающее" % args.tag)
+    except urllib.error.HTTPError as e:
+        if e.code != 404:
+            raise
+        release = api(base + "/releases", json.dumps({"tag_name": args.tag, "name": args.tag, "body": args.notes, "draft": False, "prerelease": False}).encode())
+    have = {a["name"]: a for a in release.get("assets", [])}
+
+    def curl_upload(name, path):
+        """Загрузка через curl (повторы при обрыве); токен передаётся через stdin, а не в аргументах."""
+        import subprocess
+        url = "https://uploads.github.com/repos/%s/releases/%d/assets?name=%s" % (args.repo, release["id"], name)
+        cfg = 'header = "Authorization: Bearer %s"\nheader = "Accept: application/vnd.github+json"\nheader = "Content-Type: application/octet-stream"\n' % token
+        for attempt in range(1, 5):
+            r = subprocess.run(["curl", "-sS", "--fail-with-body", "-X", "POST", "-K", "-", "--data-binary", "@" + path, "--max-time", "3600", url], input=cfg, text=True, capture_output=True)
+            if r.returncode == 0:
+                return
+            print("  попытка %d не удалась: %s" % (attempt, (r.stderr or r.stdout).strip()[:200]), flush=True)
+        sys.exit("не удалось загрузить " + name)
+
     for name in [f["name"] for f in files] + ["manifest.json"]:
-        with open(os.path.join(out, name), "rb") as f:
-            api("https://uploads.github.com/repos/%s/releases/%d/assets?name=%s" % (args.repo, release["id"], name), f.read(), "application/octet-stream")
+        path = os.path.join(out, name)
+        size = os.path.getsize(path)
+        if name in have:
+            if have[name]["size"] == size and have[name]["state"] == "uploaded":
+                print("уже загружено:", name, flush=True)
+                continue
+            api("%s/releases/assets/%d" % (base, have[name]["id"]), method="DELETE")
+        curl_upload(name, path)
         print("загружено:", name, flush=True)
     # проверка: имена ресурсов на GitHub совпали с манифестом (GitHub мог переименовать)
-    uploaded = {a["name"] for a in api("https://api.github.com/repos/%s/releases/%d" % (args.repo, release["id"]))["assets"]}
+    uploaded = {a["name"] for a in api("%s/releases/%d" % (base, release["id"]))["assets"]}
     missing = [f["name"] for f in files if f["name"] not in uploaded]
     if missing:
         sys.exit("ресурсы переименованы GitHub, манифест не совпадёт: %s" % missing)
