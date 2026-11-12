@@ -8,14 +8,16 @@
 С --upload создаёт релиз в репозитории и загружает все файлы (токен GitHub с правом записи в репозиторий берётся из GITHUB_TOKEN, нигде не сохраняется);
 перед отправкой спрашивает подтверждение. Мир получают инструментом export_world.py.
 
-В релиз идут: семь модов (uilib, gameplaymod, managementmod, worldmod, behaviormod, buildmod, levelmod) и fabric-api из <папка игры>/mods, шейдерпак и мир.
-Sodium и Iris не включаются (чужие моды: игрок ставит их сам).
+В релиз идут: семь модов (uilib, gameplaymod, managementmod, worldmod, behaviormod, buildmod, levelmod) из <папка игры>/mods, шейдерпак и мир.
+Fabric API, Sodium и Iris не включаются: игрок ставит их сам (у Fabric API имя файла содержит «+», которое GitHub переписывает, а второй экземпляр рядом
+с уже стоящим сломал бы запуск). Имена файлов релиза — только буквы, цифры, «.», «_», «-»: иначе GitHub переименует ресурс и манифест перестанет совпадать.
 """
 import argparse
 import glob
 import hashlib
 import json
 import os
+import re
 import shutil
 import sys
 import urllib.request
@@ -52,6 +54,8 @@ def main():
 
     def add(src, category, name=None, **extra):
         name = name or os.path.basename(src)
+        if not re.fullmatch(r"[A-Za-z0-9._-]+", name):
+            sys.exit("имя файла для релиза недопустимо (GitHub его переименует): " + name)
         shutil.copy2(src, os.path.join(out, name))
         entry = {"name": name, "category": category, "size": os.path.getsize(src), "sha256": sha256(src)}
         entry.update(extra)
@@ -63,10 +67,6 @@ def main():
         if not os.path.isfile(path):
             sys.exit("нет " + path + " (соберите моды и положите jar в mods)")
         add(path, "mod")
-    api = sorted(glob.glob(os.path.join(mods_dir, "fabric-api-*.jar")))
-    if not api:
-        sys.exit("в mods нет fabric-api-*.jar")
-    add(api[-1], "mod")
     if args.shaderpack:
         add(args.shaderpack, "shaderpack")
     if args.world_zip:
@@ -96,14 +96,19 @@ def main():
         req.add_header("User-Agent", "smeshariki-release")
         if data is not None:
             req.add_header("Content-Type", ctype)
-        with urllib.request.urlopen(req) as r:
+        with urllib.request.urlopen(req, timeout=1800) as r:
             return json.load(r)
 
     release = api("https://api.github.com/repos/%s/releases" % args.repo, json.dumps({"tag_name": args.tag, "name": args.tag, "body": args.notes, "draft": False, "prerelease": False}).encode())
     for name in [f["name"] for f in files] + ["manifest.json"]:
         with open(os.path.join(out, name), "rb") as f:
             api("https://uploads.github.com/repos/%s/releases/%d/assets?name=%s" % (args.repo, release["id"], name), f.read(), "application/octet-stream")
-        print("загружено:", name)
+        print("загружено:", name, flush=True)
+    # проверка: имена ресурсов на GitHub совпали с манифестом (GitHub мог переименовать)
+    uploaded = {a["name"] for a in api("https://api.github.com/repos/%s/releases/%d" % (args.repo, release["id"]))["assets"]}
+    missing = [f["name"] for f in files if f["name"] not in uploaded]
+    if missing:
+        sys.exit("ресурсы переименованы GitHub, манифест не совпадёт: %s" % missing)
     print("готово:", release["html_url"])
 
 
