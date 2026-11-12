@@ -4,17 +4,26 @@
 	"version": "${version}",
 	"name": "ManagementMod",
 	"description": "Управление игрой и миром: раздача модов, ресурспаков и шейдеров клиентам (с подтверждением), версии мира с откатом, проверка аккаунтов в сети.",
-	"authors": ["bogdan"],
+	"authors": [
+		"bogdan"
+	],
 	"license": "MIT",
 	"environment": "*",
 	"entrypoints": {
-		"main": ["com.managementmod.ManagementMod"],
-		"client": ["com.managementmod.client.ManagementModClient"]
+		"main": [
+			"com.managementmod.ManagementMod"
+		],
+		"client": [
+			"com.managementmod.client.ManagementModClient"
+		]
 	},
 	"depends": {
 		"fabricloader": ">=0.19.5",
 		"minecraft": "~26.2",
 		"java": ">=25",
 		"fabric-api": "*"
+	},
+	"recommends": {
+		"uilib": "*"
 	}
 }

@@ -33,11 +33,22 @@ public class SyncConfig {
 	/** Имена файлов (например "secret-server-mod.jar"), которые никогда не раздаются. */
 	public List<String> excludeFiles = new ArrayList<>();
 
+	/**
+	 * Установка с GitHub (для того, у кого нет хоста: сам хост или игрок один): репозиторий {@code владелец/имя}, последний релиз которого содержит
+	 * {@code manifest.json} и файлы. Пусто — не проверять. Проверка один раз при запуске игры на экране заголовка, установка только по согласию.
+	 */
+	public String gitRepo = "";
+	/** Проверять релиз при запуске игры. */
+	public boolean gitAutoCheck = true;
+	/** Адрес API (для проверок на своём узле можно указать {@code http://localhost:порт}). */
+	public String gitApiBase = "https://api.github.com";
+
 	public boolean isEnabled(SyncCategory category) {
 		return switch (category) {
 			case MOD -> syncMods;
 			case RESOURCE_PACK -> syncResourcePacks;
 			case SHADER_PACK -> syncShaderPacks;
+			case WORLD -> false;
 		};
 	}
 

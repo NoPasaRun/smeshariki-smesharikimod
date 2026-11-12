@@ -1,5 +1,7 @@
 package com.managementmod.client;
 
+import com.smeshariki.ui.Ui;
+
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -11,20 +13,27 @@ import java.util.Locale;
 
 /** Экран подтверждения, прогресса и итога установки. */
 public class SyncScreen extends Screen {
-	private static final int WHITE = 0xFFFFFFFF;
-	private static final int GRAY = 0xFFAAAAAA;
+	private static final int WHITE = Ui.TEXT;
+	private static final int GRAY = Ui.HINT;
 	private static final int YELLOW = 0xFFFFFF55;
 	private static final int RED = 0xFFFF5555;
 
-	private final SyncSession session;
+	private final SyncView session;
+	private final Runnable finish;
 	/** Экран подключения, поверх которого мы показаны: он же «тикает» соединение. */
 	private final Screen previous;
 	private SyncSession.State shown;
 
 	public SyncScreen(SyncSession session, Screen previous) {
-		super(Component.translatable("managementmod.title"));
+		this(session, previous, null);
+	}
+
+	/** @param finish что сделать по закрытию окна; {@code null} — как после раздачи с хоста ({@link SyncClient#finish}) */
+	public SyncScreen(SyncView session, Screen previous, Runnable finish) {
+		super(session.title());
 		this.session = session;
 		this.previous = previous;
+		this.finish = finish;
 	}
 
 	@Override
@@ -65,6 +74,10 @@ public class SyncScreen extends Screen {
 
 	@Override
 	public void onClose() {
+		if (finish != null) {
+			finish.run();
+			return;
+		}
 		SyncClient.finish(minecraft);
 	}
 
@@ -88,7 +101,7 @@ public class SyncScreen extends Screen {
 	}
 
 	private void renderOffer(GuiGraphicsExtractor g) {
-		int y = wrapped(g, Component.translatable("managementmod.warning"), 28, YELLOW) + 2;
+		int y = wrapped(g, session.warning(), 28, YELLOW) + 2;
 		g.centeredText(font, Component.translatable("managementmod.summary",
 			session.items().size(), formatSize(session.totalBytes())), width / 2, y, GRAY);
 		y += font.lineHeight + 8;
@@ -115,12 +128,13 @@ public class SyncScreen extends Screen {
 		int cy = height / 2;
 		g.centeredText(font, Component.translatable("managementmod.downloading",
 			session.currentName(), session.currentNumber(), session.items().size()), cx, cy - 20, WHITE);
-		int barLeft = cx - 150;
-		int barRight = cx + 150;
+		int barW = Math.min(300, width - 40);
+		int barLeft = cx - barW / 2;
+		int barRight = cx + barW / 2;
 		g.fill(barLeft - 1, cy - 1, barRight + 1, cy + 11, 0xFF000000);
 		g.fill(barLeft, cy, barRight, cy + 10, 0xFF444444);
 		double ratio = session.totalBytes() == 0 ? 0 : (double) session.doneBytes() / session.totalBytes();
-		g.fill(barLeft, cy, barLeft + (int) (300 * Math.min(1, ratio)), cy + 10, 0xFF55FF55);
+		g.fill(barLeft, cy, barLeft + (int) (barW * Math.min(1, ratio)), cy + 10, 0xFF55FF55);
 		g.centeredText(font, formatSize(session.doneBytes()) + " / " + formatSize(session.totalBytes()),
 			cx, cy + 16, GRAY);
 	}
@@ -137,11 +151,9 @@ public class SyncScreen extends Screen {
 		if (session.modsInstalled()) {
 			y = wrapped(g, Component.translatable("managementmod.restart"), y, YELLOW) + 4;
 		}
-		int maxLines = Math.max(1, (height - 40 - y) / (font.lineHeight + 2));
 		List<String> errors = session.errors();
-		for (int i = 0; i < Math.min(errors.size(), maxLines); i++) {
-			g.centeredText(font, errors.get(i), width / 2, y, RED);
-			y += font.lineHeight + 2;
+		for (int i = 0; i < errors.size() && y < height - 40; i++) {
+			y = wrapped(g, Component.literal(errors.get(i)), y, RED) + 1;
 		}
 	}
 

@@ -4,7 +4,9 @@ package com.managementmod.sync;
 public enum SyncCategory {
 	MOD("mods", ".jar", "managementmod.category.mod"),
 	RESOURCE_PACK("resourcepacks", ".zip", "managementmod.category.resourcepack"),
-	SHADER_PACK("shaderpacks", ".zip", "managementmod.category.shaderpack");
+	SHADER_PACK("shaderpacks", ".zip", "managementmod.category.shaderpack"),
+	/** Только при установке с GitHub: архив мира распаковывается в {@code saves/} (сервер мир не раздаёт). Номер в протоколе — последний, прежние не сдвигаются. */
+	WORLD("saves", ".zip", "managementmod.category.world");
 
 	public final String dir;
 	public final String extension;

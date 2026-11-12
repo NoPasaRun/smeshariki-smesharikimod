@@ -23,6 +23,7 @@ public class ManagementModClient implements ClientModInitializer {
 	public void onInitializeClient() {
 		SyncClient.init();
 		LanSettings.init();
+		ClientTickEvents.END_CLIENT_TICK.register(GitUpdate::tick);
 		ClientTickEvents.END_CLIENT_TICK.register(LanSettings::tick);
 		ClientPlayNetworking.registerGlobalReceiver(VersionsPayloads.Versions.TYPE, (payload, ctx) -> {
 			VersionsClient.INSTANCE.head = payload.head();

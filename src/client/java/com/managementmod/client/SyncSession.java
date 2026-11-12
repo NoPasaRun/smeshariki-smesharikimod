@@ -28,7 +28,7 @@ import java.util.concurrent.Executors;
  * <p>Каждый файл качается во временный {@code *.managementmod-part}, проверяется по SHA-256 из манифеста
  * и только потом переименовывается. Заменяемые файлы не удаляются, а переименовываются в {@code *.managementmod-old}.
  */
-public final class SyncSession {
+public final class SyncSession implements SyncView {
 	public enum State { OFFER, DOWNLOADING, DONE }
 
 	/** Файл к установке. {@code replaces} — локальные файлы, которые будут заменены этим. */
@@ -81,18 +81,29 @@ public final class SyncSession {
 		this.totalBytes = items.stream().mapToLong(i -> i.entry().size()).sum();
 	}
 
+	@Override
 	public State state() { return state; }
+	@Override
 	public List<Item> items() { return items; }
+	@Override
 	public long totalBytes() { return totalBytes; }
+	@Override
 	public long doneBytes() { return doneBytes; }
+	@Override
 	public int installed() { return installed; }
+	@Override
 	public boolean modsInstalled() { return modsInstalled; }
+	@Override
 	public boolean cancelled() { return cancelled; }
+	@Override
 	public List<String> errors() { return errors; }
 	/** Номер файла, который качается сейчас (с 1). */
+	@Override
 	public int currentNumber() { return Math.min(next, items.size()); }
+	@Override
 	public String currentName() { return active == null ? "" : active.item.entry().name(); }
 
+	@Override
 	public void start() {
 		if (state != State.OFFER) {
 			return;
@@ -102,6 +113,7 @@ public final class SyncSession {
 	}
 
 	/** Остановить загрузку (по кнопке или при отключении от сервера). */
+	@Override
 	public void cancel() {
 		if (state == State.DONE) {
 			return;
@@ -111,6 +123,7 @@ public final class SyncSession {
 		state = State.DONE;
 	}
 
+	@Override
 	public void tick() {
 		if (state == State.DOWNLOADING && active != null && !active.writing
 			&& System.nanoTime() - active.lastActivity > TIMEOUT_NANOS) {

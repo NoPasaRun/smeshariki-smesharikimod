@@ -5,6 +5,8 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
 import com.managementmod.versions.VersionsPayloads;
+import com.smeshariki.ui.ListScreen;
+import com.smeshariki.ui.Ui;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -17,21 +19,26 @@ import net.minecraft.network.chat.Component;
  * Версии мира («упрощённый git»): сохранить снимок мира под названием, откатиться к версии, переименовать, удалить.
  * Данные живут на сервере; откат идёт без остановки мира (если подключён движок LevelMod), иначе закрывает мир и заменяет файлы после остановки.
  */
-final class VersionsScreen extends net.minecraft.client.gui.screens.Screen {
+final class VersionsScreen extends ListScreen {
 	private static final int ROW = 22, LIST_W = 320;
 	private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm").withZone(ZoneId.systemDefault());
 
 	private final VersionsClient state;
-	private final Scroller bar = new Scroller();
 	private EditBox nameBox;
 	private int selected = -1; // номер версии
 	private boolean renaming, confirmRollback, confirmDelete;
 	private java.util.List<?> shown;
 
 	VersionsScreen(VersionsClient state) {
-		super(Component.literal("Версии мира"));
+		super(Component.translatable("gui.managementmod.versions"));
 		this.state = state;
 		if (!state.versions.isEmpty()) selected = state.versions.get(state.versions.size() - 1).id();
+	}
+
+	/** Меню версий ставит игру на паузу, как и раньше. */
+	@Override
+	protected boolean pausesGame() {
+		return true;
 	}
 
 	private VersionsPayloads.Versions.Info current() {
@@ -62,22 +69,22 @@ final class VersionsScreen extends net.minecraft.client.gui.screens.Screen {
 		}
 
 		// поле названия новой версии
-		nameBox = new EditBox(font, cx - LIST_W / 2, 28, LIST_W - 130, 20, Component.literal("Название"));
+		nameBox = new EditBox(font, cx - LIST_W / 2, 28, LIST_W - 130, 20, Component.translatable("gui.managementmod.versions.name"));
 		nameBox.setMaxLength(48);
-		nameBox.setHint(Component.literal(renaming ? "Новое название" : "Название новой версии"));
+		nameBox.setHint(Component.translatable(renaming ? "gui.managementmod.versions.rename_hint" : "gui.managementmod.versions.new_hint"));
 		var cur = current();
 		if (renaming && cur != null) nameBox.setValue(cur.name());
 		addRenderableWidget(nameBox);
 		if (renaming) {
 			setInitialFocus(nameBox);
-			addRenderableWidget(Button.builder(Component.literal("OK"), b -> applyRename()).bounds(cx + LIST_W / 2 - 124, 28, 124, 20).build());
+			addRenderableWidget(Button.builder(Component.translatable("gui.uilib.ok"), b -> applyRename()).bounds(cx + LIST_W / 2 - 124, 28, 124, 20).build());
 		} else {
-			addRenderableWidget(Button.builder(Component.literal("Сохранить версию"), b -> commit()).bounds(cx + LIST_W / 2 - 124, 28, 124, 20).build());
+			addRenderableWidget(Button.builder(Component.translatable("gui.managementmod.versions.commit"), b -> commit()).bounds(cx + LIST_W / 2 - 124, 28, 124, 20).build());
 		}
 
 		int rowA = bottom - 26;
 		boolean has = cur != null && !renaming && !state.busy;
-		addButton(cx - 160, rowA, 100, confirmRollback ? "Точно откатить?" : "Откатить", has, () -> {
+		addAction(cx - 160, rowA, 100, Component.translatable(confirmRollback ? "gui.managementmod.versions.rollback_sure" : "gui.managementmod.versions.rollback"), has, () -> {
 			if (!confirmRollback) {
 				confirmRollback = true;
 				confirmDelete = false;
@@ -87,12 +94,12 @@ final class VersionsScreen extends net.minecraft.client.gui.screens.Screen {
 			ClientPlayNetworking.send(new VersionsPayloads.VcsAction(VersionsPayloads.VcsAction.ROLLBACK, selected, ""));
 			onClose();
 		});
-		addButton(cx - 50, rowA, 100, "Переименовать", has, () -> {
+		addAction(cx - 50, rowA, 100, Component.translatable("gui.managementmod.versions.rename"), has, () -> {
 			renaming = true;
 			confirmRollback = confirmDelete = false;
 			rebuildWidgets();
 		});
-		addButton(cx + 60, rowA, 100, confirmDelete ? "Точно удалить?" : "Удалить", has, () -> {
+		addAction(cx + 60, rowA, 100, Component.translatable(confirmDelete ? "gui.managementmod.versions.delete_sure" : "gui.uilib.delete"), has, () -> {
 			if (!confirmDelete) {
 				confirmDelete = true;
 				confirmRollback = false;
@@ -103,18 +110,18 @@ final class VersionsScreen extends net.minecraft.client.gui.screens.Screen {
 			confirmDelete = false;
 			rebuildWidgets();
 		});
-		addButton(cx - 50, bottom, 100, "Закрыть", true, this::onClose);
+		addAction(cx - 50, bottom, 100, Component.translatable("gui.uilib.close"), true, this::onClose);
 	}
 
-	private void addButton(int x, int y, int w, String label, boolean active, Runnable action) {
-		Button b = addRenderableWidget(Button.builder(Component.literal(label), btn -> action.run()).bounds(x, y, w, 20).build());
-		b.active = active;
+	private void addAction(int x, int y, int w, Component label, boolean active, Runnable action) {
+		addButton(label, x, y, w, action).active = active;
 	}
 
 	private void commit() {
 		ClientPlayNetworking.send(new VersionsPayloads.VcsAction(VersionsPayloads.VcsAction.COMMIT, 0, nameBox.getValue()));
 		nameBox.setValue("");
-		net.minecraft.client.Minecraft.getInstance().gui.hud.setOverlayMessage(Component.literal("Сохраняется версия мира…"), false);
+		setFocused(null);
+		net.minecraft.client.Minecraft.getInstance().gui.hud.setOverlayMessage(Component.translatable("gui.managementmod.versions.saving"), false);
 	}
 
 	private void applyRename() {
@@ -127,7 +134,7 @@ final class VersionsScreen extends net.minecraft.client.gui.screens.Screen {
 	@Override
 	public void tick() {
 		super.tick();
-		if (shown != state.versions) {
+		if (shown != state.versions && !isEditing()) {
 			var before = shown;
 			// после сохранения выделяем новую версию
 			if (before != null && state.versions.size() > before.size() && !state.versions.isEmpty()) selected = state.versions.get(state.versions.size() - 1).id();
@@ -148,49 +155,18 @@ final class VersionsScreen extends net.minecraft.client.gui.screens.Screen {
 	}
 
 	@Override
-	public boolean mouseScrolled(double x, double y, double scrollX, double scrollY) {
-		bar.wheel(scrollY);
-		if (bar.takeChanged()) rebuildWidgets();
-		return true;
-	}
-
-	@Override
-	public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
-		if (event.button() == 0 && bar.click(event.x(), event.y())) return rebuildIfScrolled();
-		return super.mouseClicked(event, doubleClick);
-	}
-
-	@Override
-	public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event, double dx, double dy) {
-		if (bar.drag(event.y())) return rebuildIfScrolled();
-		return super.mouseDragged(event, dx, dy);
-	}
-
-	@Override
-	public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event) {
-		return bar.release() || super.mouseReleased(event);
-	}
-
-	private boolean rebuildIfScrolled() {
-		if (bar.takeChanged()) rebuildWidgets();
-		return true;
-	}
-
-	@Override
 	public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
 		super.extractRenderState(g, mouseX, mouseY, delta);
-		bar.draw(g);
-		g.centeredText(font, title, width / 2, 12, 0xFFFFFFFF);
-		if (state.versions.isEmpty())
-			g.centeredText(font, "Версий пока нет: введите название и нажмите «Сохранить версию»", width / 2, 70, 0xFFA0A0A0);
+		g.centeredText(font, title, width / 2, 12, Ui.TEXT);
+		if (state.versions.isEmpty()) drawNote(g, Component.translatable("gui.managementmod.versions.empty"), 70);
 		var v = current();
 		if (v != null) {
-			String info = "Изменено файлов: " + v.changed() + " из " + v.files() + " · " + String.format("%.1f МБ", v.bytes() / 1048576.0)
-					+ (v.author().isEmpty() ? "" : " · " + v.author());
-			g.centeredText(font, info + (v.id() == state.head ? " · текущая ●" : ""), width / 2, height - 78, 0xFFC0C0C0);
-			if (confirmRollback)
-				g.centeredText(font, state.live ? "Мир вернётся к версии без перезапуска, всё сделанное после неё пропадёт." : "Мир закроется, несохранённые изменения пропадут. Откройте мир снова.", width / 2, height - 90, 0xFFFFC040);
-			if (state.busy) g.centeredText(font, "Идёт откат мира…", width / 2, height - 102, 0xFFFFC040);
+			Component info = Component.translatable("gui.managementmod.versions.info", v.changed(), v.files(), String.format("%.1f", v.bytes() / 1048576.0));
+			if (!v.author().isEmpty()) info = info.copy().append(" · " + v.author());
+			if (v.id() == state.head) info = info.copy().append(Component.translatable("gui.managementmod.versions.current"));
+			g.centeredText(font, info, width / 2, height - 78, Ui.MUTED);
+			if (confirmRollback) g.centeredText(font, Component.translatable(state.live ? "gui.managementmod.versions.rollback_live" : "gui.managementmod.versions.rollback_close"), width / 2, height - 90, Ui.ACCENT);
+			if (state.busy) g.centeredText(font, Component.translatable("gui.managementmod.versions.busy"), width / 2, height - 102, Ui.ACCENT);
 		}
 	}
 }

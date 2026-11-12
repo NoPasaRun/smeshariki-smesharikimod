@@ -1,0 +1,111 @@
+#!/usr/bin/env python3
+"""Сборка релиза для установки с GitHub (ManagementMod, настройка gitRepo в config/managementmod.json) и, по желанию, его публикация.
+
+    python3 release.py --tag v0.1.0 --world-zip мир.zip [--shaderpack файл.zip] [--out dist] [--game-dir ~/.minecraft]
+    GITHUB_TOKEN=… python3 release.py --tag v0.1.0 --world-zip мир.zip --repo владелец/имя --upload
+
+Без --upload только собирает папку dist/: manifest.json (имя, категория, размер, SHA-256) и сами файлы — их можно загрузить в релиз вручную на сайте.
+С --upload создаёт релиз в репозитории и загружает все файлы (токен GitHub с правом записи в репозиторий берётся из GITHUB_TOKEN, нигде не сохраняется);
+перед отправкой спрашивает подтверждение. Мир получают инструментом export_world.py.
+
+В релиз идут: семь модов (uilib, gameplaymod, managementmod, worldmod, behaviormod, buildmod, levelmod) и fabric-api из <папка игры>/mods, шейдерпак и мир.
+Sodium и Iris не включаются (чужие моды: игрок ставит их сам).
+"""
+import argparse
+import glob
+import hashlib
+import json
+import os
+import shutil
+import sys
+import urllib.request
+import zipfile
+
+MODS = ["uilib", "gameplaymod", "managementmod", "worldmod", "behaviormod", "buildmod", "levelmod"]
+
+
+def sha256(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--tag", required=True)
+    ap.add_argument("--world-zip", help="архив мира от export_world.py")
+    ap.add_argument("--shaderpack", help="zip шейдерпака (необязательно)")
+    ap.add_argument("--out", default="dist")
+    ap.add_argument("--game-dir", default=os.path.expanduser("~/.minecraft"))
+    ap.add_argument("--repo", help="владелец/имя (для --upload)")
+    ap.add_argument("--upload", action="store_true")
+    ap.add_argument("--notes", default="", help="описание релиза")
+    args = ap.parse_args()
+
+    mods_dir = os.path.join(os.path.abspath(os.path.expanduser(args.game_dir)), "mods")
+    out = os.path.abspath(args.out)
+    shutil.rmtree(out, ignore_errors=True)
+    os.makedirs(out)
+    files = []
+
+    def add(src, category, name=None, **extra):
+        name = name or os.path.basename(src)
+        shutil.copy2(src, os.path.join(out, name))
+        entry = {"name": name, "category": category, "size": os.path.getsize(src), "sha256": sha256(src)}
+        entry.update(extra)
+        files.append(entry)
+        print("  %-8s %-40s %8.1f МБ" % (category, name, entry["size"] / 1048576))
+
+    for mod in MODS:
+        path = os.path.join(mods_dir, mod + "-1.0.0.jar")
+        if not os.path.isfile(path):
+            sys.exit("нет " + path + " (соберите моды и положите jar в mods)")
+        add(path, "mod")
+    api = sorted(glob.glob(os.path.join(mods_dir, "fabric-api-*.jar")))
+    if not api:
+        sys.exit("в mods нет fabric-api-*.jar")
+    add(api[-1], "mod")
+    if args.shaderpack:
+        add(args.shaderpack, "shaderpack")
+    if args.world_zip:
+        with zipfile.ZipFile(args.world_zip) as z:
+            tops = {n.split("/")[0] for n in z.namelist() if "/" in n}
+        if len(tops) != 1:
+            sys.exit("в архиве мира должна быть одна папка, найдено: %s" % sorted(tops))
+        add(args.world_zip, "world", name="world.zip", world=tops.pop())
+    with open(os.path.join(out, "manifest.json"), "w", encoding="utf-8") as f:
+        json.dump({"tag": args.tag, "files": files}, f, ensure_ascii=False, indent=2)
+    print("собрано: %s (%d файлов + manifest.json)" % (out, len(files)))
+    if not args.upload:
+        print("не опубликовано: загрузите содержимое dist/ в релиз %s вручную или запустите с --upload" % args.tag)
+        return
+
+    token = os.environ.get("GITHUB_TOKEN")
+    if not token or not args.repo:
+        sys.exit("для --upload нужны --repo и переменная GITHUB_TOKEN")
+    print("Будет создан релиз %s в %s и загружено %d файлов (%.0f МБ). Продолжить? [y/N] " % (args.tag, args.repo, len(files) + 1, sum(e["size"] for e in files) / 1048576), end="")
+    if input().strip().lower() != "y":
+        sys.exit("отменено")
+
+    def api(url, data=None, ctype="application/json"):
+        req = urllib.request.Request(url, data=data, method="POST" if data is not None else "GET")
+        req.add_header("Authorization", "Bearer " + token)
+        req.add_header("Accept", "application/vnd.github+json")
+        req.add_header("User-Agent", "smeshariki-release")
+        if data is not None:
+            req.add_header("Content-Type", ctype)
+        with urllib.request.urlopen(req) as r:
+            return json.load(r)
+
+    release = api("https://api.github.com/repos/%s/releases" % args.repo, json.dumps({"tag_name": args.tag, "name": args.tag, "body": args.notes, "draft": False, "prerelease": False}).encode())
+    for name in [f["name"] for f in files] + ["manifest.json"]:
+        with open(os.path.join(out, name), "rb") as f:
+            api("https://uploads.github.com/repos/%s/releases/%d/assets?name=%s" % (args.repo, release["id"], name), f.read(), "application/octet-stream")
+        print("загружено:", name)
+    print("готово:", release["html_url"])
+
+
+if __name__ == "__main__":
+    main()
