@@ -15,9 +15,9 @@ public final class VersionsPayloads {
 		return new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath("smesharikimod", path));
 	}
 
-	/** Действие над версиями мира: сохранить (text — название), откатить, удалить, переименовать (id версии). */
+	/** Действие над версиями мира: сохранить (text — название), откатить, удалить, переименовать (id версии), выгрузить мир в архив для раздачи (id и text не нужны). */
 	public record VcsAction(int kind, int id, String text) implements CustomPacketPayload {
-		public static final int COMMIT = 0, ROLLBACK = 1, DELETE = 2, RENAME = 3;
+		public static final int COMMIT = 0, ROLLBACK = 1, DELETE = 2, RENAME = 3, EXPORT = 4;
 		public static final Type<VcsAction> TYPE = VersionsPayloads.typeOf("vcs_action");
 		public static final StreamCodec<RegistryFriendlyByteBuf, VcsAction> CODEC = StreamCodec.ofMember(
 				(VcsAction m, RegistryFriendlyByteBuf buf) -> {

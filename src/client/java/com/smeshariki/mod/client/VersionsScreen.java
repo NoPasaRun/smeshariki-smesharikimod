@@ -110,7 +110,8 @@ final class VersionsScreen extends ListScreen {
 			confirmDelete = false;
 			rebuildWidgets();
 		});
-		addAction(cx - 50, bottom, 100, Component.translatable("gui.uilib.close"), true, this::onClose);
+		addAction(cx - 160, bottom, 155, Component.translatable("gui.smesharikimod.versions.export"), !renaming && !state.busy, this::exportWorld);
+		addAction(cx + 5, bottom, 155, Component.translatable("gui.uilib.close"), true, this::onClose);
 	}
 
 	private void addAction(int x, int y, int w, Component label, boolean active, Runnable action) {
@@ -122,6 +123,13 @@ final class VersionsScreen extends ListScreen {
 		nameBox.setValue("");
 		setFocused(null);
 		net.minecraft.client.Minecraft.getInstance().gui.hud.setOverlayMessage(Component.translatable("gui.smesharikimod.versions.saving"), false);
+	}
+
+	/** Выгрузить чистую копию мира в zip для раздачи (сервер сам сохраняет мир и пишет итог в чат). */
+	private void exportWorld() {
+		ClientPlayNetworking.send(new VersionsPayloads.VcsAction(VersionsPayloads.VcsAction.EXPORT, 0, ""));
+		net.minecraft.client.Minecraft.getInstance().gui.hud.setOverlayMessage(Component.translatable("gui.smesharikimod.export.working"), false);
+		onClose();
 	}
 
 	private void applyRename() {

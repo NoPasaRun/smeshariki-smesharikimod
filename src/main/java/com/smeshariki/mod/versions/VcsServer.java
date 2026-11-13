@@ -191,6 +191,7 @@ public final class VcsServer {
 			case VersionsPayloads.VcsAction.ROLLBACK -> rollback(player, msg.id());
 			case VersionsPayloads.VcsAction.DELETE -> delete(player, msg.id());
 			case VersionsPayloads.VcsAction.RENAME -> rename(player, msg.id(), msg.text());
+			case VersionsPayloads.VcsAction.EXPORT -> WorldExport.run(server, player);
 			default -> {
 			}
 		}

@@ -36,5 +36,10 @@
   "smesharikimod.category.world": "world",
   "smesharikimod.git.title": "Install from GitHub (%s)",
   "smesharikimod.git.warning": "Mods are executable code. Files come from the latest release of the repository %s; accept only if you trust it. A world is installed only if there is no such folder yet.",
-  "smesharikimod.git.obsolete": "Obsolete mods (old names that break startup) will be disabled: %s."
+  "smesharikimod.git.obsolete": "Obsolete mods (old names that break startup) will be disabled: %s.",
+  "gui.smesharikimod.versions.export": "Export world",
+  "gui.smesharikimod.export.working": "Exporting the world…",
+  "gui.smesharikimod.export.done": "World exported: %s (%s MB)",
+  "gui.smesharikimod.export.no_places": "No places file: levels will not load in another world (places are not marked)",
+  "gui.smesharikimod.export.failed": "World export failed: %s"
 }

@@ -36,5 +36,10 @@
   "smesharikimod.category.world": "мир",
   "smesharikimod.git.title": "Установка с GitHub (%s)",
   "smesharikimod.git.warning": "Моды — это исполняемый код. Файлы берутся из последнего релиза репозитория %s; соглашайтесь, только если ему доверяете. Мир ставится, только если такой папки ещё нет.",
-  "smesharikimod.git.obsolete": "Будут отключены устаревшие моды (старые имена, они мешают запуску): %s."
+  "smesharikimod.git.obsolete": "Будут отключены устаревшие моды (старые имена, они мешают запуску): %s.",
+  "gui.smesharikimod.versions.export": "Экспорт мира",
+  "gui.smesharikimod.export.working": "Мир выгружается в архив…",
+  "gui.smesharikimod.export.done": "Мир выгружен: %s (%s МБ)",
+  "gui.smesharikimod.export.no_places": "Файла локаций нет: в чужом мире уровни не загрузятся (локации не отмечены)",
+  "gui.smesharikimod.export.failed": "Экспорт мира не удался: %s"
 }
