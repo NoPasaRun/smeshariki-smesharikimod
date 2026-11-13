@@ -1,0 +1,11 @@
+{
+	"gui.uilib.back": "Back",
+	"gui.uilib.close": "Close",
+	"gui.uilib.ok": "OK",
+	"gui.uilib.cancel": "Cancel",
+	"gui.uilib.delete": "Delete",
+	"gui.uilib.up": "Up",
+	"gui.uilib.down": "Down",
+	"gui.uilib.search": "Search",
+	"gui.uilib.empty": "Nothing found"
+}

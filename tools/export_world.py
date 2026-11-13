@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Экспорт мира для раздачи (демо): чистая копия мира в zip, который ставит ManagementMod с GitHub или кладут в saves/ руками.
+"""Экспорт мира для раздачи (демо): чистая копия мира в zip, который ставит SmesharikiMod с GitHub или кладут в saves/ руками.
 
     python3 export_world.py "Ромашковая Долина" [--out файл.zip] [--name "Имя мира в архиве"] [--game-dir ~/.minecraft] [--keep-progress]
 
@@ -36,7 +36,7 @@ def skipped(rel, keep_progress):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("world", help="имя папки в saves/ или путь к папке мира")
-    ap.add_argument("--out", help="файл zip (по умолчанию <папка игры>/data/managementmod/exports/<мир>.zip)")
+    ap.add_argument("--out", help="файл zip (по умолчанию <папка игры>/data/smesharikimod/exports/<мир>.zip)")
     ap.add_argument("--name", help="имя папки мира внутри архива (по умолчанию как у исходного)")
     ap.add_argument("--game-dir", default=os.path.expanduser("~/.minecraft"))
     ap.add_argument("--keep-progress", action="store_true", help="оставить прогоны и статистику уровней")
@@ -51,7 +51,7 @@ def main():
     name = args.name or folder
     if any(c in name for c in '/\\:*?"<>|') or name.startswith("."):
         sys.exit("недопустимое имя мира: " + name)
-    out = args.out or os.path.join(game, "data", "managementmod", "exports", name + ".zip")
+    out = args.out or os.path.join(game, "data", "smesharikimod", "exports", name + ".zip")
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     if os.path.exists(os.path.join(world, "session.lock")):
         # lock есть всегда, пока мир открыт или после сбоя; открытую игру отличить нельзя — предупреждаем

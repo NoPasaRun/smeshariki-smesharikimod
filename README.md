@@ -1,10 +1,10 @@
-# ManagementMod
+# SmesharikiMod
 
 Управление игрой и миром: раздача и установка модов (с хоста и с GitHub), версии мира с откатом, переключатель проверки аккаунтов в сети.
 
 Часть набора модов «Смешарики» для Minecraft 26.2 (Fabric, Java 25). Общее описание, установка и состав набора — в [корневом README](https://github.com/NoPasaRun/smeshariki-demo#readme).
 
-Моды ставятся **только с подтверждения игрока** и сверяются по SHA-256. Установка с GitHub: репозиторий задан в `config/managementmod.json` (`gitRepo`, по умолчанию `NoPasaRun/smeshariki-demo`), при запуске игры на экране заголовка мод проверит последний релиз и предложит поставить недостающее (моды, мир). Версии мира (клавиша V) — только хост и только творческий режим. Инструменты: `tools/export_world.py` (чистая копия мира для раздачи), `tools/release.py` (сборка и публикация релиза).
+Моды ставятся **только с подтверждения игрока** и сверяются по SHA-256. Установка с GitHub: репозиторий задан в `config/smesharikimod.json` (`gitRepo`, по умолчанию `NoPasaRun/smeshariki-demo`), при запуске игры на экране заголовка мод проверит последний релиз и предложит поставить недостающее (моды, мир). Версии мира (клавиша V) — только хост и только творческий режим. Инструменты: `tools/export_world.py` (чистая копия мира для раздачи), `tools/release.py` (сборка и публикация релиза).
 
 ## Клавиши
 
@@ -18,7 +18,7 @@
 ./gradlew jar --no-daemon -Dorg.gradle.jvmargs=-Xmx900m
 ```
 
-Результат — `build/libs/managementmod-1.0.0.jar`. Моды компилируются против соседних jar в `../<Мод>/build/libs/`, порядок сборки: UiLib → GameplayMod, ManagementMod → WorldMod → BehaviorMod, BuildMod → LevelMod.
+Результат — `build/libs/smesharikimod-1.0.0.jar`. Моды компилируются против соседних jar в `../<Мод>/build/libs/`, порядок сборки: SmesharikiMod → GameplayMod → WorldMod → BehaviorMod, BuildMod → LevelMod.
 
 ## Лицензия
 

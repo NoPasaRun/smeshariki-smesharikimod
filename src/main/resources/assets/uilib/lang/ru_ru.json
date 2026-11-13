@@ -1,0 +1,11 @@
+{
+	"gui.uilib.back": "Назад",
+	"gui.uilib.close": "Закрыть",
+	"gui.uilib.ok": "OK",
+	"gui.uilib.cancel": "Отмена",
+	"gui.uilib.delete": "Удалить",
+	"gui.uilib.up": "Выше",
+	"gui.uilib.down": "Ниже",
+	"gui.uilib.search": "Поиск",
+	"gui.uilib.empty": "Ничего не найдено"
+}

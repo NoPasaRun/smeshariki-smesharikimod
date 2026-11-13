@@ -1,9 +1,9 @@
 {
 	"schemaVersion": 1,
-	"id": "managementmod",
+	"id": "smesharikimod",
 	"version": "${version}",
-	"name": "ManagementMod",
-	"description": "Управление игрой и миром: раздача модов, ресурспаков и шейдеров клиентам (с подтверждением), версии мира с откатом, проверка аккаунтов в сети.",
+	"name": "SmesharikiMod",
+	"description": "Общий мод Смешариков (бывший ManagementMod, в него влит UiLib): общий интерфейс окон, установка модов с GitHub, раздача модов, ресурспаков и шейдеров клиентам (с подтверждением), версии мира с откатом, проверка аккаунтов в сети.",
 	"authors": [
 		"bogdan"
 	],
@@ -11,10 +11,10 @@
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"com.managementmod.ManagementMod"
+			"com.smeshariki.mod.SmesharikiMod"
 		],
 		"client": [
-			"com.managementmod.client.ManagementModClient"
+			"com.smeshariki.mod.client.SmesharikiModClient"
 		]
 	},
 	"depends": {
@@ -23,7 +23,8 @@
 		"java": ">=25",
 		"fabric-api": "*"
 	},
-	"recommends": {
+	"breaks": {
+		"managementmod": "*",
 		"uilib": "*"
 	}
 }

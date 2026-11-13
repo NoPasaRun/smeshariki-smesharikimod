@@ -6,7 +6,7 @@ loom {
 	splitEnvironmentSourceSets()
 
 	mods {
-		"managementmod" {
+		"smesharikimod" {
 			sourceSet sourceSets.main
 			sourceSet sourceSets.client
 		}
@@ -17,8 +17,6 @@ dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-	// UiLib (общий интерфейс: Scroller, ListScreen, SelectScreen, палитра): собранный jar лежит рядом, собирать его первым.
-	implementation files("../UiLib/build/libs/uilib-1.0.0.jar")
 }
 
 processResources {

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Сборка релиза для установки с GitHub (ManagementMod, настройка gitRepo в config/managementmod.json) и, по желанию, его публикация.
+"""Сборка релиза для установки с GitHub (SmesharikiMod, настройка gitRepo в config/smesharikimod.json) и, по желанию, его публикация.
 
     python3 release.py --tag v0.1.0 --world-zip мир.zip [--shaderpack файл.zip] [--out dist] [--game-dir ~/.minecraft]
     GITHUB_TOKEN=… python3 release.py --tag v0.1.0 --world-zip мир.zip --repo владелец/имя --upload
@@ -8,7 +8,7 @@
 С --upload создаёт релиз в репозитории и загружает все файлы (токен GitHub с правом записи в репозиторий берётся из GITHUB_TOKEN, нигде не сохраняется);
 перед отправкой спрашивает подтверждение. Мир получают инструментом export_world.py.
 
-В релиз идут: семь модов (uilib, gameplaymod, managementmod, worldmod, behaviormod, buildmod, levelmod) из <папка игры>/mods, шейдерпак и мир.
+В релиз идут: шесть модов (gameplaymod, smesharikimod, worldmod, behaviormod, buildmod, levelmod) из <папка игры>/mods, шейдерпак и мир.
 Fabric API, Sodium и Iris не включаются: игрок ставит их сам (у Fabric API имя файла содержит «+», которое GitHub переписывает, а второй экземпляр рядом
 с уже стоящим сломал бы запуск). Имена файлов релиза — только буквы, цифры, «.», «_», «-»: иначе GitHub переименует ресурс и манифест перестанет совпадать.
 """
@@ -23,9 +23,9 @@ import sys
 import urllib.request
 import zipfile
 
-# прежние имена модов: если лежат в mods рядом с новыми, игра не запускается; установщик отключает их (переименует в .managementmod-old)
-OBSOLETE = ["smesharikiworld-1.0.0.jar", "installermod-1.0.0.jar"]
-MODS = ["uilib", "gameplaymod", "managementmod", "worldmod", "behaviormod", "buildmod", "levelmod"]
+# прежние имена модов: если лежат в mods рядом с новыми, игра не запускается; установщик отключает их (переименует в .smesharikimod-old)
+OBSOLETE = ["smesharikiworld-1.0.0.jar", "installermod-1.0.0.jar", "uilib-1.0.0.jar", "managementmod-1.0.0.jar"]
+MODS = ["gameplaymod", "smesharikimod", "worldmod", "behaviormod", "buildmod", "levelmod"]
 
 
 def sha256(path):
