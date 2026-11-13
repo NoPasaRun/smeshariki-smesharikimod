@@ -23,6 +23,8 @@ import sys
 import urllib.request
 import zipfile
 
+# прежние имена модов: если лежат в mods рядом с новыми, игра не запускается; установщик отключает их (переименует в .managementmod-old)
+OBSOLETE = ["smesharikiworld-1.0.0.jar", "installermod-1.0.0.jar"]
 MODS = ["uilib", "gameplaymod", "managementmod", "worldmod", "behaviormod", "buildmod", "levelmod"]
 
 
@@ -76,7 +78,7 @@ def main():
             sys.exit("в архиве мира должна быть одна папка, найдено: %s" % sorted(tops))
         add(args.world_zip, "world", name="world.zip", world=tops.pop())
     with open(os.path.join(out, "manifest.json"), "w", encoding="utf-8") as f:
-        json.dump({"tag": args.tag, "files": files}, f, ensure_ascii=False, indent=2)
+        json.dump({"tag": args.tag, "files": files, "obsolete": OBSOLETE}, f, ensure_ascii=False, indent=2)
     print("собрано: %s (%d файлов + manifest.json)" % (out, len(files)))
     if not args.upload:
         print("не опубликовано: загрузите содержимое dist/ в релиз %s вручную или запустите с --upload" % args.tag)

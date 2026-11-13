@@ -44,8 +44,8 @@ public final class GitRelease {
 	public record Entry(FileEntry file, String url, String world) {
 	}
 
-	/** Итог проверки релиза: метка релиза и то, чего на диске нет или что отличается. */
-	public record Plan(String tag, List<Entry> entries) {
+	/** Итог проверки релиза: метка релиза, то, чего на диске нет или что отличается, и устаревшие моды из {@code mods/}, которые надо отключить (прежние имена: старый jar рядом с новым ломает запуск). */
+	public record Plan(String tag, List<Entry> entries, List<String> obsolete) {
 	}
 
 	private GitRelease() {
@@ -177,7 +177,15 @@ public final class GitRelease {
 			}
 			entries.add(new Entry(file, url, world));
 		}
-		return new Plan(tag, entries);
+		List<String> obsolete = new ArrayList<>();
+		if (manifest.has("obsolete")) {
+			for (JsonElement e : manifest.getAsJsonArray("obsolete")) {
+				String name = e.getAsString();
+				if (!FileEntry.isSafeName(SyncCategory.MOD, name)) throw new IOException("неверное имя в списке устаревших: " + name);
+				if (Files.isRegularFile(gameDir.resolve(SyncCategory.MOD.dir).resolve(name))) obsolete.add(name);
+			}
+		}
+		return new Plan(tag, entries, List.copyOf(obsolete));
 	}
 
 	/** Скачивает файл в {@code target}, возвращает SHA-256 скачанного; {@code progress} получает число байт, пришедших за раз. */

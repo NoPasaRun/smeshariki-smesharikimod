@@ -30,7 +30,7 @@ final class GitUpdate {
 		Thread thread = new Thread(() -> {
 			try {
 				GitRelease.Plan plan = GitRelease.fetch(api, repo, game);
-				if (plan.entries().isEmpty()) {
+				if (plan.entries().isEmpty() && plan.obsolete().isEmpty()) {
 					ManagementMod.LOGGER.info("Установка с GitHub: {} {}, всё на месте", repo, plan.tag());
 					return;
 				}

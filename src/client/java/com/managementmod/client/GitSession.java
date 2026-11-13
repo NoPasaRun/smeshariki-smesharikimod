@@ -31,6 +31,7 @@ public final class GitSession implements SyncView {
 	private final String apiBase, repo, tag;
 	private final Path gameDir;
 	private final List<GitRelease.Entry> entries;
+	private final List<String> obsolete;
 	private final List<SyncSession.Item> items = new ArrayList<>();
 	private final List<String> errors = new CopyOnWriteArrayList<>();
 	private final long totalBytes;
@@ -47,6 +48,7 @@ public final class GitSession implements SyncView {
 		this.tag = plan.tag();
 		this.gameDir = gameDir;
 		this.entries = plan.entries();
+		this.obsolete = plan.obsolete();
 		for (int i = 0; i < entries.size(); i++) {
 			var file = entries.get(i).file();
 			Path local = gameDir.resolve(file.category().dir).resolve(file.name());
@@ -112,7 +114,9 @@ public final class GitSession implements SyncView {
 
 	@Override
 	public Component warning() {
-		return Component.translatable("managementmod.git.warning", repo);
+		Component warning = Component.translatable("managementmod.git.warning", repo);
+		if (!obsolete.isEmpty()) warning = warning.copy().append(" ").append(Component.translatable("managementmod.git.obsolete", String.join(", ", obsolete)));
+		return warning;
 	}
 
 	@Override
@@ -151,7 +155,24 @@ public final class GitSession implements SyncView {
 				ManagementMod.LOGGER.warn("Установка с GitHub: {} не поставлен", item.entry().name(), e);
 			}
 		}
+		if (!cancelled) disableObsolete();
 		state = SyncSession.State.DONE;
+	}
+
+	/** Устаревшие моды (прежние имена) не удаляются, а переименовываются в {@code *.managementmod-old}: рядом с новым они дают дубль и игра не запускается. */
+	private void disableObsolete() {
+		Path mods = gameDir.resolve(SyncCategory.MOD.dir);
+		for (String name : obsolete) {
+			Path old = mods.resolve(name);
+			try {
+				if (Files.isRegularFile(old)) {
+					Files.move(old, old.resolveSibling(name + ".managementmod-old"), StandardCopyOption.REPLACE_EXISTING);
+					modsInstalled = true;
+				}
+			} catch (IOException e) {
+				errors.add(name + ": " + e.getMessage());
+			}
+		}
 	}
 
 	private void install(GitRelease.Entry entry, SyncSession.Item item) throws IOException, InterruptedException {

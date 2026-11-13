@@ -35,5 +35,6 @@
   "gui.managementmod.versions.busy": "Rolling the world back…",
   "managementmod.category.world": "world",
   "managementmod.git.title": "Install from GitHub (%s)",
-  "managementmod.git.warning": "Mods are executable code. Files come from the latest release of the repository %s; accept only if you trust it. A world is installed only if there is no such folder yet."
+  "managementmod.git.warning": "Mods are executable code. Files come from the latest release of the repository %s; accept only if you trust it. A world is installed only if there is no such folder yet.",
+  "managementmod.git.obsolete": "Obsolete mods (old names that break startup) will be disabled: %s."
 }
