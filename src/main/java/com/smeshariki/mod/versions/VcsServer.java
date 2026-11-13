@@ -41,8 +41,23 @@ import net.minecraft.world.level.storage.LevelResource;
  * файлы мира заменяются содержимым версии.
  */
 public final class VcsServer {
-	/** Папка истории в корне мира; до переименования мода она называлась {@code buildmod_vcs} ({@link #migrateOldFolder}). */
-	static final String DIR = "managementmod_versions", OLD_DIR = "buildmod_vcs";
+	/**
+	 * Папка истории: {@code <мир>/data/smesharikimod/versions}. Раньше лежала в корне мира как {@code managementmod_versions}, ещё раньше {@code buildmod_vcs}
+	 * ({@link #migrateOldFolder} переносит её целиком).
+	 */
+	static final String DIR = "data/smesharikimod/versions";
+	static final String[] OLD_DIRS = {"managementmod_versions", "buildmod_vcs"};
+	/** Прежние пути в версиях → нынешние: старая версия при откате кладёт файл на новое место ({@link WorldVersions#renamed}). */
+	static final Map<String, String> RENAMED = new java.util.concurrent.ConcurrentHashMap<>();
+
+	/** Путь файла версии по нынешним правилам: прежнее имя (или папка с прежним именем) заменяется новым. */
+	static String current(String rel) {
+		for (var e : RENAMED.entrySet()) {
+			if (rel.equals(e.getKey())) return e.getValue();
+			if (rel.startsWith(e.getKey() + "/")) return e.getValue() + rel.substring(e.getKey().length());
+		}
+		return rel;
+	}
 	private static final int MAX_NAME = 48;
 	/**
 	 * Что не входит в снимок: сама история, замок сессии и всё, что другие моды объявили общим для версий через {@link WorldVersions#skipTopLevel}
@@ -85,8 +100,7 @@ public final class VcsServer {
 		return true;
 	}
 	static {
-		SKIP_TOP.add(DIR);
-		SKIP_TOP.add(OLD_DIR);
+		for (String old : OLD_DIRS) SKIP_TOP.add(old);
 		SKIP_TOP.add("session.lock");
 	}
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -138,12 +152,16 @@ public final class VcsServer {
 
 	/** Мир с историей под прежним именем папки: переименовываем её целиком (одна атомарная операция на одной файловой системе). */
 	private static void migrateOldFolder(Path root) {
-		Path old = root.resolve(OLD_DIR), now = root.resolve(DIR);
-		if (!Files.isDirectory(old) || Files.exists(now)) return;
-		try {
-			Files.move(old, now, StandardCopyOption.ATOMIC_MOVE);
-		} catch (IOException | RuntimeException e) {
-			SmesharikiMod.LOGGER.error("Не удалось переименовать папку версий мира {} в {}: история останется под прежним именем и не будет видна", OLD_DIR, DIR, e);
+		Path now = root.resolve(DIR);
+		for (String name : OLD_DIRS) {
+			Path old = root.resolve(name);
+			if (!Files.isDirectory(old) || Files.exists(now)) continue;
+			try {
+				Files.createDirectories(now.getParent());
+				Files.move(old, now, StandardCopyOption.ATOMIC_MOVE);
+			} catch (IOException | RuntimeException e) {
+				SmesharikiMod.LOGGER.error("Не удалось перенести папку версий мира {} в {}: история не будет видна", name, DIR, e);
+			}
 		}
 	}
 
@@ -385,7 +403,9 @@ public final class VcsServer {
 			int id = JsonParser.parseString(Files.readString(pending, StandardCharsets.UTF_8)).getAsJsonObject().get("id").getAsInt();
 			Files.deleteIfExists(pending);
 			JsonObject json = JsonParser.parseString(Files.readString(vcs.resolve("commits").resolve(id + ".json"), StandardCharsets.UTF_8)).getAsJsonObject();
-			Map<String, Entry> files = readFiles(json);
+			Map<String, Entry> files = new LinkedHashMap<>();
+			// прежние имена файлов (до переноса данных модов в data/<мод>) — на нынешние места
+			readFiles(json).forEach((name, entry) -> files.put(current(name), entry));
 			// старые версии хранили и то, что теперь в снимок не входит (игроки, настройки мира, данные уровней): оно остаётся как есть
 			files.keySet().removeIf(name -> !kept(name));
 			// сначала проверяем, что все объекты на месте — иначе не трогаем мир

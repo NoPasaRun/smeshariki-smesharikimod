@@ -29,6 +29,14 @@ public final class WorldVersions {
 	}
 
 	/**
+	 * Файл или папка, которые раньше лежали по пути {@code oldPath} (от корня мира), теперь лежат по {@code newPath}: откат старой версии кладёт их на новое место.
+	 * Звать при загрузке мода, вместе с {@link #keep} для нового пути.
+	 */
+	public static void renamed(String oldPath, String newPath) {
+		VcsServer.RENAMED.put(oldPath, newPath);
+	}
+
+	/**
 	 * Добавить в версии путь (шаблон от корня мира через {@code /}, {@code *} — любое имя сегмента; входит и сам путь, и всё внутри). Версии хранят <b>только</b> состояние мира:
 	 * блоки и сущности входят всегда, остальное — только объявленное так. Моды объявляют свои файлы, привязанные к блокам и сущностям (платформы, стены), а настройки,
 	 * данные игроков и уровней не объявляют: те сохраняются постоянно и откатом не трогаются. Звать при загрузке мода.
@@ -88,6 +96,8 @@ public final class WorldVersions {
 	/** Папка истории мира; пока мир не открывали с этим модом, история может лежать под прежним именем. */
 	private static Path vcsDir(Path worldRoot) {
 		Path now = worldRoot.resolve(VcsServer.DIR);
-		return Files.isDirectory(now) ? now : worldRoot.resolve(VcsServer.OLD_DIR);
+		if (Files.isDirectory(now)) return now;
+		for (String old : VcsServer.OLD_DIRS) if (Files.isDirectory(worldRoot.resolve(old))) return worldRoot.resolve(old);
+		return now;
 	}
 }

@@ -3,11 +3,11 @@
 
     python3 export_world.py "Ромашковая Долина" [--out файл.zip] [--name "Имя мира в архиве"] [--game-dir ~/.minecraft] [--keep-progress]
 
-Что НЕ попадает в архив: история версий (managementmod_versions, buildmod_vcs: гигабайты), session.lock, level.dat_old, данные игроков
+Что НЕ попадает в архив: история версий (data/smesharikimod/versions, прежние managementmod_versions и buildmod_vcs: гигабайты), session.lock, level.dat_old, данные игроков
 (players/, playerdata/, advancements/, stats/: новый игрок начнёт с нуля), прогоны и статистика уровней (data/levelmod/levels.dat и копии: вернуть
 флагом --keep-progress), прежний ghosts.dat. Всё остальное (блоки, сущности, смешарики, платформы и стены, кат-сцены, маршруты брёвен) идёт как есть.
 
-Что ДОБАВЛЯЕТСЯ: levelmod_places.json в корне мира — локации и группы из <папка игры>/data/levelmod/worlds/<мир>/places.json (вне мира они живут
+Что ДОБАВЛЯЕТСЯ: data/levelmod/places.json в мире — локации и группы из <папка игры>/data/levelmod/worlds/<мир>/places.json (вне мира они живут
 в файле, а у получателя папка мира может называться иначе); LevelMod подхватывает его при первом открытии мира.
 
 Игра должна быть закрыта (файлы региона читаются как есть). Мир не изменяется, архив пишется отдельно.
@@ -24,7 +24,7 @@ LEVELMOD_PROGRESS = {"levels.dat", "levels.dat.pre_places.bak", "ghosts.dat"}
 
 def skipped(rel, keep_progress):
     parts = rel.split("/")
-    if parts[0] in SKIP_DIRS:
+    if parts[0] in SKIP_DIRS or parts[:3] == ["data", "smesharikimod", "versions"]:
         return True
     if parts[-1] in SKIP_FILES or parts[-1].endswith(".lock"):
         return True
@@ -61,7 +61,8 @@ def main():
     total = packed = 0
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as z:
         for root, dirs, files in os.walk(world):
-            dirs.sort()
+            # история версий (гигабайты) не обходится вовсе
+            dirs[:] = sorted(d for d in dirs if not skipped(os.path.relpath(os.path.join(root, d), world).replace(os.sep, "/"), True))
             for f in sorted(files):
                 path = os.path.join(root, f)
                 rel = os.path.relpath(path, world).replace(os.sep, "/")
@@ -70,8 +71,8 @@ def main():
                 z.write(path, name + "/" + rel)
                 total += os.path.getsize(path)
         if os.path.isfile(places):
-            z.write(places, name + "/levelmod_places.json")
-            print("локации и группы добавлены: levelmod_places.json")
+            z.write(places, name + "/data/levelmod/places.json")
+            print("локации и группы добавлены: data/levelmod/places.json")
         else:
             print("ВНИМАНИЕ: нет файла локаций " + places + " — в чужом мире уровень не загрузится (локации не отмечены)")
     packed = os.path.getsize(out)
