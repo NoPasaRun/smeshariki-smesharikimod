@@ -26,6 +26,23 @@ public interface SyncView {
 
 	String currentName();
 
+	/** Есть ли в предложении мир, который можно не скачивать (только установка с GitHub). */
+	default boolean hasWorld() {
+		return false;
+	}
+
+	default boolean worldSelected() {
+		return true;
+	}
+
+	default void setWorldSelected(boolean selected) {
+	}
+
+	/** Сколько файлов будет установлено с учётом отказа от мира. */
+	default int selectedCount() {
+		return items().size();
+	}
+
 	void start();
 
 	void cancel();

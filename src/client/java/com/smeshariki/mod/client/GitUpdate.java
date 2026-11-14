@@ -34,7 +34,17 @@ final class GitUpdate {
 					SmesharikiMod.LOGGER.info("Установка с GitHub: {} {}, всё на месте", repo, plan.tag());
 					return;
 				}
+				// игрок уже отказался от мира, а больше ставить нечего: окно из-за одной карты при каждом запуске не показываем
+				if (config.gitSkipWorld && plan.obsolete().isEmpty() && plan.entries().stream().allMatch(e -> e.file().category() == com.smeshariki.mod.sync.SyncCategory.WORLD)) {
+					SmesharikiMod.LOGGER.info("Установка с GitHub: {} {}, мир пропущен по выбору игрока", repo, plan.tag());
+					return;
+				}
 				GitSession session = new GitSession(api, repo, plan, game);
+				session.setWorldSelected(!config.gitSkipWorld);
+				session.onWorldChoice(selected -> {
+					config.gitSkipWorld = !selected;
+					config.save();
+				});
 				mc.execute(() -> {
 					if (mc.gui.screen() == title) mc.gui.setScreen(new SyncScreen(session, title, () -> mc.gui.setScreen(title)));
 				});

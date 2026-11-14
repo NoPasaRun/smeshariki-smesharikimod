@@ -34,11 +34,13 @@ public final class GitSession implements SyncView {
 	private final List<String> obsolete;
 	private final List<SyncSession.Item> items = new ArrayList<>();
 	private final List<String> errors = new CopyOnWriteArrayList<>();
-	private final long totalBytes;
 	private volatile SyncSession.State state = SyncSession.State.OFFER;
 	private volatile long doneBytes;
 	private volatile int next, installed;
 	private volatile boolean modsInstalled, cancelled;
+	/** Скачивать ли мир (по умолчанию да; игрок может отказаться кнопкой в окне). */
+	private volatile boolean worldSelected = true;
+	private volatile java.util.function.Consumer<Boolean> worldChoiceListener;
 	private volatile String current = "";
 	private Thread worker;
 
@@ -54,7 +56,6 @@ public final class GitSession implements SyncView {
 			Path local = gameDir.resolve(file.category().dir).resolve(file.name());
 			items.add(new SyncSession.Item(i, file, file.category() != SyncCategory.WORLD && Files.exists(local) ? List.of(local) : List.of()));
 		}
-		this.totalBytes = items.stream().mapToLong(i -> i.entry().size()).sum();
 	}
 
 	@Override
@@ -69,7 +70,36 @@ public final class GitSession implements SyncView {
 
 	@Override
 	public long totalBytes() {
-		return totalBytes;
+		return items.stream().filter(this::selected).mapToLong(i -> i.entry().size()).sum();
+	}
+
+	private boolean selected(SyncSession.Item item) {
+		return worldSelected || item.entry().category() != SyncCategory.WORLD;
+	}
+
+	@Override
+	public boolean hasWorld() {
+		return items.stream().anyMatch(i -> i.entry().category() == SyncCategory.WORLD);
+	}
+
+	@Override
+	public boolean worldSelected() {
+		return worldSelected;
+	}
+
+	@Override
+	public void setWorldSelected(boolean selected) {
+		if (state == SyncSession.State.OFFER) worldSelected = selected;
+	}
+
+	/** Что сделать с выбором игрока, когда он нажал «Скачать и установить» (клиент запоминает отказ в настройках). */
+	public void onWorldChoice(java.util.function.Consumer<Boolean> listener) {
+		this.worldChoiceListener = listener;
+	}
+
+	@Override
+	public int selectedCount() {
+		return (int) items.stream().filter(this::selected).count();
 	}
 
 	@Override
@@ -99,7 +129,7 @@ public final class GitSession implements SyncView {
 
 	@Override
 	public int currentNumber() {
-		return Math.min(next, items.size());
+		return Math.min(next, selectedCount());
 	}
 
 	@Override
@@ -127,6 +157,8 @@ public final class GitSession implements SyncView {
 	public void start() {
 		if (state != SyncSession.State.OFFER) return;
 		state = SyncSession.State.DOWNLOADING;
+		var listener = worldChoiceListener;
+		if (listener != null && hasWorld()) listener.accept(worldSelected);
 		worker = new Thread(this::run, "SmesharikiMod-Git-Download");
 		worker.setDaemon(true);
 		worker.start();
@@ -141,8 +173,9 @@ public final class GitSession implements SyncView {
 
 	private void run() {
 		for (int i = 0; i < items.size() && !cancelled; i++) {
-			next = i + 1;
 			var item = items.get(i);
+			if (!selected(item)) continue;
+			next++;
 			current = item.entry().name();
 			try {
 				install(entries.get(i), item);

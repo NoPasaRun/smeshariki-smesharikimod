@@ -38,6 +38,8 @@ public class SyncConfig {
 	 * {@code manifest.json} и файлы. По умолчанию — репозиторий демо; пусто — не проверять. Проверка один раз при запуске игры на экране заголовка, установка только по согласию.
 	 */
 	public String gitRepo = "NoPasaRun/smeshariki-demo";
+	/** Игрок отказался скачивать мир из релиза (кнопка «Мир» в окне установки): не предлагать одну только карту при каждом запуске. */
+	public boolean gitSkipWorld = false;
 	/** Проверять релиз при запуске игры. */
 	public boolean gitAutoCheck = true;
 	/** Адрес API (для проверок на своём узле можно указать {@code http://localhost:порт}). */
@@ -54,6 +56,16 @@ public class SyncConfig {
 
 	public long maxFileSizeBytes() {
 		return Math.min(FileEntry.MAX_FILE_SIZE, Math.max(1, maxFileSizeMb) * 1024L * 1024L);
+	}
+
+	/** Записывает настройки в {@code config/smesharikimod.json} (сейчас — запоминание отказа от мира). */
+	public void save() {
+		Path file = FabricLoader.getInstance().getConfigDir().resolve("smesharikimod.json");
+		try (Writer writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
+			GSON.toJson(this, writer);
+		} catch (IOException e) {
+			LOGGER.warn("Не удалось записать {}", file, e);
+		}
 	}
 
 	public static SyncConfig load() {

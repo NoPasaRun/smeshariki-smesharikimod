@@ -43,6 +43,12 @@ public class SyncScreen extends Screen {
 		int y = height - 28;
 		switch (shown) {
 			case OFFER -> {
+				if (session.hasWorld()) {
+					addRenderableWidget(Button.builder(Component.translatable(session.worldSelected() ? "smesharikimod.world.on" : "smesharikimod.world.off"), b -> {
+						session.setWorldSelected(!session.worldSelected());
+						rebuildWidgets();
+					}).bounds(cx - 155, y - 24, 310, 20).build());
+				}
 				addRenderableWidget(Button.builder(Component.translatable("smesharikimod.accept"), b -> session.start())
 					.bounds(cx - 155, y, 150, 20).build());
 				addRenderableWidget(Button.builder(Component.translatable("smesharikimod.decline"), b -> onClose())
@@ -103,10 +109,10 @@ public class SyncScreen extends Screen {
 	private void renderOffer(GuiGraphicsExtractor g) {
 		int y = wrapped(g, session.warning(), 28, YELLOW) + 2;
 		g.centeredText(font, Component.translatable("smesharikimod.summary",
-			session.items().size(), formatSize(session.totalBytes())), width / 2, y, GRAY);
+			session.selectedCount(), formatSize(session.totalBytes())), width / 2, y, GRAY);
 		y += font.lineHeight + 8;
 
-		int maxLines = Math.max(1, (height - 40 - y) / (font.lineHeight + 2));
+		int maxLines = Math.max(1, (height - (session.hasWorld() ? 64 : 40) - y) / (font.lineHeight + 2));
 		List<SyncSession.Item> items = session.items();
 		int shownCount = items.size() > maxLines ? maxLines - 1 : items.size();
 		int x = Math.max(20, width / 2 - 160);
@@ -115,7 +121,9 @@ public class SyncScreen extends Screen {
 			String line = "[" + Component.translatable(item.entry().category().translationKey).getString() + "] "
 				+ item.entry().name() + " — " + formatSize(item.entry().size())
 				+ (item.isUpdate() ? " (" + Component.translatable("smesharikimod.update").getString() + ")" : "");
-			g.text(font, line, x, y, WHITE);
+			boolean skipped = item.entry().category() == com.smeshariki.mod.sync.SyncCategory.WORLD && !session.worldSelected();
+			if (skipped) line += " — " + Component.translatable("smesharikimod.world.skipped").getString();
+			g.text(font, line, x, y, skipped ? GRAY : WHITE);
 			y += font.lineHeight + 2;
 		}
 		if (shownCount < items.size()) {
@@ -127,7 +135,7 @@ public class SyncScreen extends Screen {
 		int cx = width / 2;
 		int cy = height / 2;
 		g.centeredText(font, Component.translatable("smesharikimod.downloading",
-			session.currentName(), session.currentNumber(), session.items().size()), cx, cy - 20, WHITE);
+			session.currentName(), session.currentNumber(), session.selectedCount()), cx, cy - 20, WHITE);
 		int barW = Math.min(300, width - 40);
 		int barLeft = cx - barW / 2;
 		int barRight = cx + barW / 2;
@@ -145,7 +153,7 @@ public class SyncScreen extends Screen {
 			g.centeredText(font, Component.translatable("smesharikimod.cancelled"), width / 2, y, YELLOW);
 			y += font.lineHeight + 4;
 		}
-		g.centeredText(font, Component.translatable("smesharikimod.done", session.installed(), session.items().size()),
+		g.centeredText(font, Component.translatable("smesharikimod.done", session.installed(), session.selectedCount()),
 			width / 2, y, WHITE);
 		y += font.lineHeight + 6;
 		if (session.modsInstalled()) {
