@@ -130,7 +130,8 @@ def main():
         path = os.path.join(out, name)
         size = os.path.getsize(path)
         if name in have:
-            if have[name]["size"] == size and have[name]["state"] == "uploaded":
+            # манифест заменяется всегда: сумма внутри могла измениться при том же размере файла
+            if name != "manifest.json" and have[name]["size"] == size and have[name]["state"] == "uploaded":
                 print("уже загружено:", name, flush=True)
                 continue
             api("%s/releases/assets/%d" % (base, have[name]["id"]), method="DELETE")
