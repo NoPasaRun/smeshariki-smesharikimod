@@ -48,7 +48,7 @@ public class SyncConfig {
 			case MOD -> syncMods;
 			case RESOURCE_PACK -> syncResourcePacks;
 			case SHADER_PACK -> syncShaderPacks;
-			case WORLD -> false;
+			case WORLD, SHADER_SETTINGS -> false;
 		};
 	}
 

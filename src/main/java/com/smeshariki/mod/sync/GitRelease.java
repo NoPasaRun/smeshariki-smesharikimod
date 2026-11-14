@@ -108,6 +108,7 @@ public final class GitRelease {
 			case "resourcepack" -> SyncCategory.RESOURCE_PACK;
 			case "shaderpack" -> SyncCategory.SHADER_PACK;
 			case "world" -> SyncCategory.WORLD;
+			case "shadersettings" -> SyncCategory.SHADER_SETTINGS;
 			default -> null;
 		};
 	}
@@ -173,6 +174,8 @@ public final class GitRelease {
 				if (Files.exists(gameDir.resolve("saves").resolve(world))) continue;
 			} else {
 				Path local = gameDir.resolve(category.dir).resolve(name);
+				// настройки шейдера игрок меняет сам: имеющийся файл не заменяем
+				if (category == SyncCategory.SHADER_SETTINGS && Files.exists(local)) continue;
 				if (Files.isRegularFile(local) && sha256(local).equals(file.sha256())) continue;
 			}
 			entries.add(new Entry(file, url, world));

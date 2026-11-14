@@ -6,7 +6,9 @@ public enum SyncCategory {
 	RESOURCE_PACK("resourcepacks", ".zip", "smesharikimod.category.resourcepack"),
 	SHADER_PACK("shaderpacks", ".zip", "smesharikimod.category.shaderpack"),
 	/** Только при установке с GitHub: архив мира распаковывается в {@code saves/} (сервер мир не раздаёт). Номер в протоколе — последний, прежние не сдвигаются. */
-	WORLD("saves", ".zip", "smesharikimod.category.world");
+	WORLD("saves", ".zip", "smesharikimod.category.world"),
+	/** Только при установке с GitHub: файл настроек шейдера рядом с шейдерпаком ({@code Имя.zip.txt}); ставится, только если такого файла ещё нет, сервер его не раздаёт. Последний в протоколе. */
+	SHADER_SETTINGS("shaderpacks", ".txt", "smesharikimod.category.shadersettings");
 
 	public final String dir;
 	public final String extension;

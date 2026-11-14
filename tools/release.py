@@ -41,6 +41,7 @@ def main():
     ap.add_argument("--tag", required=True)
     ap.add_argument("--world-zip", help="архив мира от export_world.py")
     ap.add_argument("--shaderpack", help="zip шейдерпака (необязательно)")
+    ap.add_argument("--shader-settings", help="файл настроек шейдера Имя.zip.txt (необязательно; ставится, только если у игрока его нет)")
     ap.add_argument("--out", default="dist")
     ap.add_argument("--game-dir", default=os.path.expanduser("~/.minecraft"))
     ap.add_argument("--repo", help="владелец/имя (для --upload)")
@@ -71,6 +72,8 @@ def main():
         add(path, "mod")
     if args.shaderpack:
         add(args.shaderpack, "shaderpack")
+    if args.shader_settings:
+        add(args.shader_settings, "shadersettings")
     if args.world_zip:
         with zipfile.ZipFile(args.world_zip) as z:
             tops = {n.split("/")[0] for n in z.namelist() if "/" in n}
